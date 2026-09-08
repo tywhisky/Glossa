@@ -1,0 +1,31 @@
+name: macOS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test
+        run: >-
+          xcodebuild test -project Glossa.xcodeproj -scheme Glossa
+          -configuration Debug -destination 'platform=macOS'
+          -derivedDataPath build/DerivedData CODE_SIGN_IDENTITY=-
+      - name: Build release for Apple Silicon and Intel
+        run: >-
+          xcodebuild build -project Glossa.xcodeproj -scheme Glossa
+          -configuration Release -destination 'generic/platform=macOS'
+          -derivedDataPath build/DerivedData CODE_SIGN_IDENTITY=-

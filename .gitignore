@@ -1,0 +1,41 @@
+# macOS and Xcode local state
+.DS_Store
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+DerivedData/
+build/
+.build/
+*.xcarchive
+*.dSYM/
+*.xcresult/
+
+# Credentials, signing material and machine-specific configuration
+.env
+.env.*
+!.env.example
+*.local
+*.local.*
+Config/Local.xcconfig
+*.p12
+*.p8
+*.pem
+*.key
+*.cer
+*.mobileprovision
+*.provisionprofile
+AuthKey_*
+secrets/
+
+# Personal agent/editor state (install skills outside the repository)
+.agents/skills/
+.codex/
+.claude/
+.idea/
+.vscode/
+
+# User data and profiling artifacts
+*.sqlite*
+*.store*
+*.trace/

@@ -1,0 +1,5 @@
+// Copy to Config/Local.xcconfig only when configuring your signing identity.
+// Local builds work with ad-hoc signing and no Apple Developer account.
+// DEVELOPMENT_TEAM = YOUR_TEAM_ID
+// CODE_SIGN_IDENTITY = Apple Development
+// API keys belong in macOS Keychain, never in build settings or the app bundle.
