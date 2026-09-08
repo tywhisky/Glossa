@@ -10,6 +10,10 @@
 		A10000000000000000000002 /* PromptTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002; };
 		A10000000000000000000003 /* PromptSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003; };
 		A10000000000000000000004 /* PromptTemplateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004; };
+		A1000000000000000000000A /* GlobalHotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A; };
+		A1000000000000000000000B /* SelectedText.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B; };
+		A1000000000000000000000C /* LookupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C; };
+		A1000000000000000000000D /* LookupPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +36,10 @@
 		A20000000000000000000007 = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		A20000000000000000000008 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Glossa.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000009 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GlossaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2000000000000000000000A = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKey.swift; sourceTree = "<group>"; };
+		A2000000000000000000000B = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedText.swift; sourceTree = "<group>"; };
+		A2000000000000000000000C = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupController.swift; sourceTree = "<group>"; };
+		A2000000000000000000000D = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupPanel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -47,7 +55,7 @@
 		};
 		A50000000000000000000002 = {
 			isa = PBXGroup;
-			children = (A20000000000000000000001, A20000000000000000000002, A20000000000000000000003, A20000000000000000000005, A20000000000000000000006);
+			children = (A20000000000000000000001, A20000000000000000000002, A20000000000000000000003, A2000000000000000000000A, A2000000000000000000000B, A2000000000000000000000C, A2000000000000000000000D, A20000000000000000000005, A20000000000000000000006);
 			path = Glossa;
 			sourceTree = "<group>";
 		};
@@ -127,7 +135,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		A60000000000000000000001 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001, A10000000000000000000002, A10000000000000000000003); runOnlyForDeploymentPostprocessing = 0; };
+		A60000000000000000000001 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001, A10000000000000000000002, A1000000000000000000000A, A1000000000000000000000B, A1000000000000000000000C, A1000000000000000000000D, A10000000000000000000003); runOnlyForDeploymentPostprocessing = 0; };
 		A60000000000000000000002 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000004); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 

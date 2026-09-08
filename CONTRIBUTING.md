@@ -8,7 +8,15 @@ Use the build/test commands in [README.md](README.md). The shared **Glossa** sch
 
 Keep changes focused. Add a small runnable check for nontrivial logic, and manually exercise changed UI with keyboard navigation, light/dark appearance, and VoiceOver labels. Use Release builds outside the debugger for performance measurements. Verify minimum supported macOS versions before claiming support for a new API.
 
-The initial app has only a menu bar scene and a settings scene. Prompt data uses `@AppStorage`; transient preview input uses `@State`. Add services and storage when implementing the features that use them, rather than introducing an unused service layer.
+The app uses a menu bar scene, a settings scene, and an AppKit nonactivating panel hosting SwiftUI. `LookupController` owns the interaction lifetime; `SelectedTextReader` performs bounded AX reads away from the main actor. Prompt data uses `@AppStorage`; transient manual input uses `@State`. Add services and storage only with the features that use them.
+
+The current build retains App Sandbox. Test the shortcut and manual-input panel without granting extra permissions. Cross-app selection is intentionally gated until the distribution configuration change is approved; do not bypass that gate with a build override. Once approved, validate Chrome webpages and Preview text PDFs with the following checks:
+
+- Select text, press the shortcut, and verify the result panel stays on the reading window's screen without moving keyboard focus. Click the panel and verify text selection/copy and typing work.
+- Close using Escape, outside click, and the title-bar close button. Repeat at least 20 times, check that only one panel exists, and measure Release physical footprint after settling.
+- Record a different shortcut, cancel recording, switch apps mid-recording, and try a shortcut already registered by another app. Verify the active shortcut and error message.
+- Check missing permissions, empty/unavailable selection, a secure text field, exactly 2,000 characters, and an oversized selection. The latter must show an error without silently shortening the input.
+- Verify manual paste does not change the existing clipboard and permission recovery works after the user enables Glossa in System Settings. Check a second screen, a fullscreen reading window, and macOS 14 before claiming those runtime combinations.
 
 Before a pull request:
 
