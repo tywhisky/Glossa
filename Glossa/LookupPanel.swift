@@ -34,7 +34,7 @@ final class LookupPanelController: NSObject, NSWindowDelegate {
     private let escape = GlobalHotKey(id: 2)
     private weak var model: LookupController?
 
-    func show(model: LookupController, windowFrame: CGRect?) -> String? {
+    func show(model: LookupController, windowFrame: CGRect?, focusesInput: Bool) -> String? {
         self.model = model
         let screens = NSScreen.screens
         guard let primary = screens.first else { return "No screen is available." }
@@ -68,7 +68,11 @@ final class LookupPanelController: NSObject, NSWindowDelegate {
             let start = frame.offsetBy(dx: 0, dy: 8)
             panel.setFrame(start, display: true)
             panel.alphaValue = 0
-            panel.orderFrontRegardless()
+            if focusesInput {
+                panel.makeKeyAndOrderFront(nil)
+            } else {
+                panel.orderFrontRegardless()
+            }
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.14
                 context.timingFunction = CAMediaTimingFunction(name: .easeOut)
@@ -158,6 +162,7 @@ private struct LookupPanelView: View {
     let model: LookupController
     let preferredHeightChanged: (CGFloat) -> Void
     @State private var input = ""
+    @FocusState private var isInputFocused: Bool
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
@@ -223,6 +228,7 @@ private struct LookupPanelView: View {
                     TextField("Type or paste a word, phrase, or sentence", text: $input, axis: .vertical)
                         .lineLimit(2...5)
                         .textFieldStyle(.roundedBorder)
+                        .focused($isInputFocused)
                         .onSubmit { model.submit(input) }
                     HStack {
                         Button("Look Up") { model.submit(input) }
@@ -249,6 +255,10 @@ private struct LookupPanelView: View {
                 .stroke(Color(nsColor: .separatorColor).opacity(0.45))
         }
         .clipShape(.rect(cornerRadius: 16))
+        .defaultFocus($isInputFocused, true)
+        .onChange(of: model.manualFocusRequest) { _, _ in
+            if !isInputFocused { isInputFocused = true }
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Glossa lookup")
     }

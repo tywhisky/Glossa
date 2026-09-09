@@ -21,6 +21,8 @@ struct APISettingsView: View {
 }
 
 private struct ProviderSettingsEditor: View {
+    private static let savedKeySentinel = "saved api key"
+
     let provider: AIProvider
     let settings: LookupSettings
     // This is an editable draft; only Save changes the configuration used by lookups.
@@ -31,6 +33,7 @@ private struct ProviderSettingsEditor: View {
     @State private var isSaving = false
     @State private var isExpanded = false
     @State private var confirmsDelete = false
+    @FocusState private var isKeyFocused: Bool
 
     init(provider: AIProvider, settings: LookupSettings) {
         self.provider = provider
@@ -43,12 +46,24 @@ private struct ProviderSettingsEditor: View {
             Group {
                 TextField("Base URL", text: $configuration.baseURL)
                     .autocorrectionDisabled()
-                    .onChange(of: configuration.baseURL) { _, _ in key = ""; message = nil }
+                    .onChange(of: configuration.baseURL) { _, _ in
+                        key = ""
+                        keyStatus = "Checking key…"
+                        message = nil
+                    }
                 TextField("Default model", text: $configuration.model)
                     .autocorrectionDisabled()
                 SecureField("API key", text: $key, prompt: Text("Leave blank to keep saved key"))
                     .autocorrectionDisabled()
+                    .focused($isKeyFocused)
                     .accessibilityHint(keyStatus == "Key saved" ? "A key is saved. Leave blank to keep it." : "Enter an API key.")
+                    .onChange(of: isKeyFocused) { _, focused in
+                        if focused, key == Self.savedKeySentinel {
+                            key = ""
+                        } else if !focused, key.isEmpty, keyStatus == "Key saved" {
+                            key = Self.savedKeySentinel
+                        }
+                    }
                 HStack {
                     Button("Save") { save() }
                     Button("Restore Defaults") { configuration = provider.defaults; message = nil }
@@ -68,7 +83,7 @@ private struct ProviderSettingsEditor: View {
                     Text(configuration.model).font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Text(configuration != settings.configuration(for: provider) || !key.isEmpty ? "Unsaved changes" : keyStatus)
+                Text(configuration != settings.configuration(for: provider) || hasKeyDraft ? "Unsaved changes" : keyStatus)
                     .font(.caption).foregroundStyle(.secondary)
             }
             .padding(.vertical, 4)
@@ -91,12 +106,15 @@ private struct ProviderSettingsEditor: View {
         }.value
         guard !Task.isCancelled else { return }
         keyStatus = status
+        if status == "Key saved", key.isEmpty, !isKeyFocused {
+            key = Self.savedKeySentinel
+        }
     }
 
     private func save() {
         do {
             let value = try configuration.validated()
-            let secret = key.trimmingCharacters(in: .whitespacesAndNewlines)
+            let secret = hasKeyDraft ? key.trimmingCharacters(in: .whitespacesAndNewlines) : ""
             isSaving = true
             message = nil
             Task {
@@ -128,5 +146,9 @@ private struct ProviderSettingsEditor: View {
             } catch { message = error.localizedDescription }
             isSaving = false
         }
+    }
+
+    private var hasKeyDraft: Bool {
+        !key.isEmpty && key != Self.savedKeySentinel
     }
 }

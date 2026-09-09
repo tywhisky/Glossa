@@ -19,6 +19,7 @@ final class LookupController {
     private(set) var isLoading = false
     private(set) var isReadingSelection = false
     private(set) var lookupError: String?
+    private(set) var manualFocusRequest = 0
 
     typealias Lookup = @Sendable (PreparedLookup, @escaping @Sendable (String) async -> Void) async throws -> Void
     @ObservationIgnored private let lookup: Lookup
@@ -140,7 +141,8 @@ final class LookupController {
         resetLookup()
         text = ""
         failure = nil
-        show(windowFrame: nil)
+        manualFocusRequest &+= 1
+        show(windowFrame: nil, focusesInput: true)
     }
 
     func submit(_ input: String) { submit(input, useCache: true) }
@@ -246,9 +248,9 @@ final class LookupController {
         lookupError = nil
     }
 
-    private func show(windowFrame: CGRect?) {
+    private func show(windowFrame: CGRect?, focusesInput: Bool = false) {
         if panel == nil { panel = LookupPanelController() }
-        dismissalError = panel?.show(model: self, windowFrame: windowFrame)
+        dismissalError = panel?.show(model: self, windowFrame: windowFrame, focusesInput: focusesInput)
     }
 }
 

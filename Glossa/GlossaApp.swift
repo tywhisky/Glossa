@@ -6,8 +6,16 @@ struct GlossaApp: App {
     @NSApplicationDelegateAdaptor(GlossaDelegate.self) private var delegate
 
     var body: some Scene {
-        MenuBarExtra("Glossa", systemImage: "character.book.closed") {
+        MenuBarExtra {
             GlossaMenu(model: delegate.lookup)
+        } label: {
+            ZStack {
+                Image(systemName: "book.closed")
+                Text("G")
+                    .font(.system(size: 7, weight: .bold, design: .rounded))
+                    .offset(y: 1)
+            }
+            .accessibilityLabel("Glossa")
         }
 
         Settings {
