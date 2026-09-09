@@ -4,7 +4,6 @@ import SwiftUI
 
 struct PromptSettingsView: View {
     let model: LookupController
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pane = SettingsPane.lookup
 
     var body: some View {
@@ -45,10 +44,8 @@ struct PromptSettingsView: View {
                     .settingsPane(isActive: pane == .flows)
             }
         }
-        .frame(width: 620)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(minWidth: 620, idealWidth: 620, minHeight: 520, idealHeight: 560)
         .disclosureGroupStyle(SettingsDisclosureGroupStyle())
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: pane)
     }
 }
 
@@ -74,6 +71,16 @@ private enum SettingsPane: CaseIterable, Identifiable {
     }
 }
 
+private extension View {
+    func settingsPane(isActive: Bool) -> some View {
+        opacity(isActive ? 1 : 0)
+            .frame(height: isActive ? nil : 0)
+            .clipped()
+            .allowsHitTesting(isActive)
+            .accessibilityHidden(!isActive)
+    }
+}
+
 private struct SettingsDisclosureGroupStyle: DisclosureGroupStyle {
     func makeBody(configuration: Configuration) -> some View {
         SettingsDisclosureGroup(configuration: configuration)
@@ -87,15 +94,18 @@ private struct SettingsDisclosureGroup: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
-                configuration.isExpanded.toggle()
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) {
+                    configuration.isExpanded.toggle()
+                }
             } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: 12) {
                     configuration.label
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Image(systemName: "chevron.right")
-                        .font(.caption.bold())
+                        .font(.body.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .rotationEffect(.degrees(configuration.isExpanded ? 90 : 0))
+                        .accessibilityHidden(true)
                 }
                 .contentShape(.rect)
             }
@@ -107,20 +117,9 @@ private struct SettingsDisclosureGroup: View {
                 configuration.content
                     .padding(.leading, 18)
                     .padding(.top, 8)
-                    .transition(reduceMotion ? .identity : .opacity.combined(with: .move(edge: .top)))
+                    .transition(reduceMotion ? .identity : .opacity)
             }
         }
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: configuration.isExpanded)
-    }
-}
-
-private extension View {
-    func settingsPane(isActive: Bool) -> some View {
-        opacity(isActive ? 1 : 0)
-            .frame(height: isActive ? nil : 0)
-            .clipped()
-            .allowsHitTesting(isActive)
-            .accessibilityHidden(!isActive)
     }
 }
 
@@ -131,11 +130,12 @@ private struct LookupSettingsView: View {
     var body: some View {
         Form {
             Section {
-                ShortcutRecorder(model: model)
+                ShortcutRecorder(model: model, purpose: .selection)
+                ShortcutRecorder(model: model, purpose: .manual)
             } header: {
-                Text("Shortcut")
+                Text("Shortcuts")
             } footer: {
-                Text("Select text in your reading app, then press this shortcut. Click the shortcut to change it.")
+                Text("Selected Text looks up the current selection. Type or Paste opens the manual input panel. Click a shortcut to change it.")
             }
             Section {
                 LabeledContent("Selected-text access") {
@@ -228,6 +228,7 @@ private struct TranslationFlowEditor: View {
                 .autocorrectionDisabled()
             Text("Leave the model blank to use the provider’s default.")
                 .font(.caption).foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
             VStack(alignment: .leading, spacing: 8) {
                 Text("Prompt").font(.headline)
                 TextEditor(text: $flow.prompt)
@@ -256,7 +257,10 @@ private struct TranslationFlowEditor: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             .disclosureGroupStyle(SettingsDisclosureGroupStyle())
-            Button("Delete Flow…", role: .destructive) { confirmsDelete = true }
+            Button("Delete Flow", role: .destructive) { confirmsDelete = true }
+                .buttonStyle(.bordered)
+                .tint(.red)
+                .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.top, 8)
                 .alert("Delete this flow?", isPresented: $confirmsDelete) {
                     Button("Delete", role: .destructive, action: remove)
@@ -281,18 +285,27 @@ private struct TranslationFlowEditor: View {
 
 private struct ShortcutRecorder: View {
     let model: LookupController
+    let purpose: ShortcutPurpose
     @State private var monitor: Any?
     @State private var message: String?
 
+    private var shortcut: LookupShortcut {
+        purpose == .selection ? model.shortcut : model.manualShortcut
+    }
+
+    private var error: String? {
+        purpose == .selection ? model.shortcutError : model.manualShortcutError
+    }
+
     var body: some View {
-        LabeledContent("Global shortcut") {
-            Button(monitor == nil ? model.shortcut.label : "Cancel Recording") {
+        LabeledContent(purpose.title) {
+            Button(monitor == nil ? shortcut.label : "Cancel Recording") {
                 if monitor == nil { begin() } else { end() }
             }
             .monospaced()
             .help("Click to record a shortcut. Escape cancels recording.")
-            .accessibilityLabel(monitor == nil ? "Record global shortcut" : "Cancel shortcut recording")
-            .accessibilityValue(model.shortcut.label)
+            .accessibilityLabel(monitor == nil ? "Record \(purpose.title) shortcut" : "Cancel shortcut recording")
+            .accessibilityValue(shortcut.label)
         }
         .onDisappear { end() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in end() }
@@ -300,20 +313,21 @@ private struct ShortcutRecorder: View {
             Text("Press a key with Option, Control, or Command. Escape cancels.")
                 .font(.caption).foregroundStyle(.secondary)
         }
-        if let error = message ?? model.shortcutError {
+        if let error = message ?? self.error {
             Text(verbatim: error).foregroundStyle(.orange)
         }
     }
 
     private func begin() {
         message = nil
-        model.suspendShortcut()
+        model.suspendShortcuts()
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             MainActor.assumeIsolated {
                 if event.keyCode == 53 {
                     end()
                 } else if let shortcut = LookupShortcut.from(event) {
-                    model.setShortcut(shortcut)
+                    if purpose == .selection { model.setShortcut(shortcut) }
+                    else { model.setManualShortcut(shortcut) }
                     end()
                 } else {
                     message = "Use a character key with Option, Control, or Command."
@@ -321,13 +335,19 @@ private struct ShortcutRecorder: View {
             }
             return nil
         }
-        if monitor == nil { model.resumeShortcut() }
+        if monitor == nil { model.resumeShortcuts() }
     }
 
     private func end() {
         guard let monitor else { return }
         NSEvent.removeMonitor(monitor)
         self.monitor = nil
-        model.resumeShortcut()
+        model.resumeShortcuts()
     }
+}
+
+private enum ShortcutPurpose {
+    case selection, manual
+
+    var title: String { self == .selection ? "Selected Text" : "Type or Paste" }
 }

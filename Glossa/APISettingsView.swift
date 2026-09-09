@@ -48,11 +48,14 @@ private struct ProviderSettingsEditor: View {
                     .autocorrectionDisabled()
                 SecureField("API key", text: $key, prompt: Text("Leave blank to keep saved key"))
                     .autocorrectionDisabled()
+                    .accessibilityHint(keyStatus == "Key saved" ? "A key is saved. Leave blank to keep it." : "Enter an API key.")
                 HStack {
                     Button("Save") { save() }
                     Button("Restore Defaults") { configuration = provider.defaults; message = nil }
                     Spacer()
-                    Button("Delete Key…", role: .destructive) { confirmsDelete = true }
+                    Button("Delete Key", role: .destructive) { confirmsDelete = true }
+                        .buttonStyle(.bordered)
+                        .tint(.red)
                 }
                 .padding(.top, 8)
                 if let message { Text(verbatim: message).font(.caption).textSelection(.enabled) }

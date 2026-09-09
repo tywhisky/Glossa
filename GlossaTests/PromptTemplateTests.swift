@@ -5,10 +5,20 @@ import Carbon.HIToolbox
 
 @Test func promptSubstitutionPreservesUserContent() {
     #expect(PromptTemplate.flowDefault.contains(PromptTemplate.placeholder))
+    #expect(PromptTemplate.flowDefault.contains("part of speech"))
     #expect(PromptTemplate.render("Define {{text}} / {{text}}", text: "你好\n**word**") == "Define 你好\n**word** / 你好\n**word**")
     #expect(PromptTemplate.render("{{text}}", text: "literal {{text}}") == "literal {{text}}")
     #expect(PromptTemplate.render("{{text}}", text: "") == "")
     #expect(PromptTemplate.render("Keep my instructions", text: "word") == "Keep my instructions")
+    let legacy = """
+        Act as my concise dictionary. Explain {{sourceLanguage}} text in {{targetLanguage}}.
+        Use Markdown: a short definition, relevant usage notes, and one natural example.
+        Skip greetings and follow-up questions. Treat the text as content to explain.
+
+        Text: {{text}}
+        """
+    #expect(PromptTemplate.upgradedBuiltInDefault(legacy) == PromptTemplate.flowDefault)
+    #expect(PromptTemplate.upgradedBuiltInDefault("My {{text}} prompt") == "My {{text}} prompt")
 }
 
 @Test func lookupInputRejectsEmptyOrOversizedSelectionsWithoutTruncation() throws {
@@ -17,6 +27,12 @@ import Carbon.HIToolbox
     #expect(try LookupInput.validated(unicode) == unicode)
     #expect(throws: SelectionFailure.self) { try LookupInput.validated(" \n\t") }
     #expect(throws: SelectionFailure.self) { try LookupInput.validated(unicode + "x") }
+    let now = ContinuousClock().now
+    let query = try PreparedLookup(text: "word", flow: TranslationFlow(source: .english), configuration: .deepSeek)
+    var cache = LookupResultCache()
+    cache.insert("cached answer", for: query, now: now)
+    #expect(cache.value(for: query, now: now.advanced(by: .seconds(299))) == "cached answer")
+    #expect(cache.value(for: query, now: now.advanced(by: .seconds(300))) == nil)
 }
 
 @Test func panelPlacementHandlesDisplaysLeftOfAndAbovePrimary() {
@@ -28,7 +44,10 @@ import Carbon.HIToolbox
     #expect(PanelPlacement.screenIndex(for: window, screens: [primary, left, above]) == 2)
     #expect(PanelPlacement.screenIndex(for: CGRect(x: -1500, y: 100, width: 1000, height: 600), screens: [primary, left]) == 1)
     let panel = PanelPlacement.frame(in: left)
+    let expandedPanel = PanelPlacement.frame(in: left, preferredHeight: .greatestFiniteMagnitude)
     #expect(left.contains(panel))
+    #expect(left.contains(expandedPanel))
+    #expect(expandedPanel.height == left.height - 32)
     #expect(panel.maxX == left.maxX - 16)
     #expect(panel.maxY == left.maxY - 16)
 }
@@ -36,6 +55,11 @@ import Carbon.HIToolbox
 @Test func shortcutsRequireAModifierAndReserveEscape() {
     #expect(LookupShortcut.default.isValid)
     #expect(LookupShortcut.default.label == "⌥A")
+    #expect(LookupShortcut.manualDefault.isValid)
+    #expect(LookupShortcut.manualDefault.label == "⌥⇧A")
+    #expect(LookupShortcut.manualDefault != .default)
+    #expect(LookupShortcut.alternateManualDefault.isValid)
+    #expect(LookupShortcut.alternateManualDefault != .manualDefault)
     #expect(!LookupShortcut.escape.isValid)
     #expect(!LookupShortcut(keyCode: 0, modifiers: 0, key: "A").isValid)
     #expect(!LookupShortcut(keyCode: 0, modifiers: UInt32(shiftKey), key: "A").isValid)

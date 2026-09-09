@@ -13,7 +13,8 @@ struct GlossaApp: App {
         Settings {
             PromptSettingsView(model: delegate.lookup)
         }
-        .windowResizability(.contentSize)
+        .defaultSize(width: 620, height: 560)
+        .windowResizability(.contentMinSize)
     }
 }
 
@@ -37,7 +38,9 @@ private struct GlossaMenu: View {
     var body: some View {
         Text("Glossa · AI-only dictionary")
         Text("Select text, then press \(model.shortcut.label)")
+        Text("Open manual input with \(model.manualShortcut.label)")
         if let error = model.shortcutError { Text(verbatim: error) }
+        if let error = model.manualShortcutError { Text(verbatim: error) }
         Button("Type or Paste Text…") { model.showManualEntry() }
         Divider()
         Button("Settings…") {

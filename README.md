@@ -13,11 +13,11 @@ Glossa aims to make looking up a word disappear into the reading experience: sel
 Available now:
 
 - A native menu bar app with no Dock icon or launch window.
-- A configurable global shortcut (Option+A by default), with conflict reporting and recording in Settings.
+- Configurable global shortcuts for selected-text lookup (Option+A by default) and manual input (Option+Shift+A), with conflict reporting and recording in Settings.
 - A borderless top-right panel on the reading window's screen, with manual typing/pasting, streaming results, Escape/outside-click dismissal, and replacement of the previous result.
 - Input validation for words, phrases, and sentences up to 2,000 Swift characters (extended grapheme clusters), without truncating oversized selections.
 - Separate, collapsible DeepSeek and OpenAI configurations with a default model per provider; credentials stored per base URL in macOS Keychain.
-- Cancellable streaming, stop/retry, bounded responses, and native inline Markdown (bold, emphasis, code, links, and preserved line breaks). Block headings, tables, HTML, and CSS layout are not implemented.
+- Cancellable streaming, stop/retry, bounded responses, a five-minute 16-entry in-memory result cache, and native inline Markdown (bold, emphasis, code, links, and preserved line breaks). Block headings, tables, HTML, and CSS layout are not implemented.
 - Native Settings panes for Lookup, AI Providers, and Translation Flows; an inline shortcut recorder and a separate permission group.
 - Collapsible language flows with individual prompts, provider selection, optional model overrides, and offline prompt previews. Source-language matching uses macOS Natural Language on demand; the result panel supports manual flow selection.
 - A standard Xcode project, Swift 6 checks, a small Swift Testing check, and macOS CI.
@@ -34,7 +34,7 @@ Static dictionaries, OCR, screen capture, lessons, and a local inference engine 
 
 ## Build and run
 
-Requires macOS 14 or newer and Xcode 16 or newer. Open `Glossa.xcodeproj`, select the **Glossa** scheme and **My Mac**, then Run. Look for the book/character symbol in the menu bar. Use **Settings…** to edit your AI providers, shortcut, and translation flows, **Type or Paste Text…** to open the lookup panel, and **Quit Glossa** to exit. After granting selected-text access, select text in another app and press Option+A to open the panel and start the lookup automatically.
+Requires macOS 14 or newer and Xcode 16 or newer. Open `Glossa.xcodeproj`, select the **Glossa** scheme and **My Mac**, then Run. Look for the book/character symbol in the menu bar. Use **Settings…** to edit your AI providers, shortcuts, and translation flows, **Type or Paste Text…** to open the lookup panel, and **Quit Glossa** to exit. After granting selected-text access, select text in another app and press Option+A to look it up automatically, or press Option+Shift+A to open manual input.
 
 No packages, API keys, environment files, or paid developer membership are required to build and run offline tests. A real lookup requires your provider API key and sufficient account balance. Local builds use ad-hoc signing unless the ignored `Config/Local.xcconfig` supplies an Apple Development identity. A distributable app will need a Developer ID identity and notarization.
 
@@ -64,7 +64,7 @@ In **Settings… → AI Providers**, expand DeepSeek and use its defaults: base 
 
 The URL, model, request builder, and SSE decoder are shared with OpenAI-compatible Chat Completions endpoints. OpenAI has its own configuration, initially `https://api.openai.com/v1` with `gpt-4.1-mini`. Use a base URL, not the complete `/chat/completions` path, and choose a supported Chat Completions model. Custom endpoints are labeled in Settings. Keys are scoped to the normalized base URL; changing endpoints does not reuse another endpoint’s key. Leave the key field blank to keep its saved key, or use **Delete Key…** to remove it for the displayed URL.
 
-DeepSeek requests explicitly disable thinking for short dictionary responses. That extension is omitted for other hosts. The client requests at most 2,048 output tokens; it limits assembled prompts and output to 64 KiB, SSE events to 64 KiB, and received stream data to 1 MiB. Requests use an ephemeral session, a 30-second inactivity timeout and a 90-second resource timeout, with no automatic retry, disk cache, cookies, or redirects. Truncated or interrupted responses are marked as incomplete.
+DeepSeek requests explicitly disable thinking for short dictionary responses. That extension is omitted for other hosts. The client requests at most 2,048 output tokens; it limits assembled prompts and output to 64 KiB, SSE events to 64 KiB, and received stream data to 1 MiB. Requests use an ephemeral session, a 30-second inactivity timeout and a 90-second resource timeout, with no automatic retry, disk cache, cookies, or redirects. Completed results may be reused from the five-minute in-memory cache; Retry bypasses it. Truncated or interrupted responses are marked as incomplete.
 
 Defaults and protocol reviewed on 2026-09-08 against the [DeepSeek documentation](https://api-docs.deepseek.com/) and [OpenAI Chat Completions streaming reference](https://developers.openai.com/api/reference/resources/chat/subresources/completions/streaming-events). Compatibility here means streaming Chat Completions with text deltas and `max_tokens`; it does not include Responses, tools, images, or every model-specific option.
 
@@ -98,7 +98,7 @@ Current verification (2026-09-09): the Debug build and all 12 Swift Testing chec
 
 ## Privacy and secrets
 
-AI provider configurations, translation flows and their prompts, and your shortcut are persisted in this Mac’s app preferences. A lookup sends your input and assembled prompt to the configured provider over HTTPS; provider retention policies apply. The app does not persist query text or responses, and clears them on dismissal. The clipboard is read only when you explicitly paste. Do not put credentials or sensitive source text in the prompt itself.
+AI provider configurations, translation flows and their prompts, and your shortcuts are persisted in this Mac’s app preferences. A lookup sends your input and assembled prompt to the configured provider over HTTPS; provider retention policies apply. The app does not persist query text or responses to disk; completed results can remain in memory for up to five minutes and disappear when the app quits. The visible query is cleared on dismissal. The clipboard is read only when you explicitly paste. Do not put credentials or sensitive source text in the prompt itself.
 
 API credentials live in macOS Keychain, without Keychain synchronization. They are never stored in `UserDefaults`, prompts, `.xcconfig`, source code, app resources, or wordbook/iCloud records. Direct-distribution builds run outside App Sandbox; API requests still require HTTPS. Requests exist only during a lookup and are cancelled when superseded or dismissed; HTTP errors are shown without echoing raw provider bodies or credentials.
 

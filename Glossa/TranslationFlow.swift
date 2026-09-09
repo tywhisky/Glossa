@@ -3,7 +3,7 @@ import NaturalLanguage
 import Observation
 
 enum AIProvider: String, Codable, CaseIterable, Identifiable, Sendable {
-    case deepSeek, openAI
+    case openAI, deepSeek
     var id: Self { self }
     var name: String { self == .deepSeek ? "DeepSeek" : "OpenAI" }
     var defaults: APIConfiguration {
@@ -113,8 +113,13 @@ final class LookupSettings {
                       AIProvider.allCases.allSatisfy({ saved.configurations[$0] != nil }) else {
                     throw APIError.invalidConfiguration
                 }
-                flows = saved.flows
+                flows = saved.flows.map { flow in
+                    var flow = flow
+                    flow.prompt = PromptTemplate.upgradedBuiltInDefault(flow.prompt)
+                    return flow
+                }
                 configurations = saved.configurations
+                if flows != saved.flows { try write(flows: flows, configurations: configurations) }
             } else {
                 var configuration = APIConfiguration.deepSeek
                 if let data = defaults.data(forKey: APIConfiguration.storageKey) {
@@ -124,7 +129,9 @@ final class LookupSettings {
                 configurations = Dictionary(uniqueKeysWithValues: AIProvider.allCases.map { ($0, $0.defaults) })
                 configurations[provider] = configuration
                 var initial = TranslationFlow(provider: provider)
-                initial.prompt = defaults.string(forKey: PromptTemplate.storageKey) ?? PromptTemplate.flowDefault
+                initial.prompt = PromptTemplate.upgradedBuiltInDefault(
+                    defaults.string(forKey: PromptTemplate.storageKey) ?? PromptTemplate.flowDefault
+                )
                 flows = [initial]
                 try write(flows: flows, configurations: configurations)
             }

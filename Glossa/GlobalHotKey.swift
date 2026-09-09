@@ -7,8 +7,11 @@ struct LookupShortcut: Codable, Equatable, Sendable {
     let key: String
 
     static let `default` = Self(keyCode: UInt32(kVK_ANSI_A), modifiers: UInt32(optionKey), key: "A")
+    static let manualDefault = Self(keyCode: UInt32(kVK_ANSI_A), modifiers: UInt32(optionKey | shiftKey), key: "A")
+    static let alternateManualDefault = Self(keyCode: UInt32(kVK_ANSI_A), modifiers: UInt32(controlKey | optionKey), key: "A")
     static let escape = Self(keyCode: UInt32(kVK_Escape), modifiers: 0, key: "Esc")
     static let storageKey = "lookupShortcut"
+    static let manualStorageKey = "manualLookupShortcut"
 
     var label: String {
         [(controlKey, "⌃"), (optionKey, "⌥"), (shiftKey, "⇧"), (cmdKey, "⌘")]
@@ -24,9 +27,13 @@ struct LookupShortcut: Codable, Equatable, Sendable {
     }
 
     static func load() -> Self {
+        load(storageKey: storageKey, fallback: .default)
+    }
+
+    static func load(storageKey: String, fallback: Self) -> Self {
         guard let data = UserDefaults.standard.data(forKey: storageKey),
               let value = try? JSONDecoder().decode(Self.self, from: data), value.isValid else {
-            return .default
+            return fallback
         }
         return value
     }

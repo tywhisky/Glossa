@@ -7,9 +7,10 @@ enum PanelPlacement {
                width: accessibilityFrame.width, height: accessibilityFrame.height)
     }
 
-    static func frame(in visibleFrame: CGRect) -> CGRect {
+    static func frame(in visibleFrame: CGRect, preferredHeight: CGFloat = 420) -> CGRect {
         let width = min(400, max(1, visibleFrame.width - 32))
-        let height = min(420, max(1, visibleFrame.height - 32))
+        let availableHeight = max(1, visibleFrame.height - 32)
+        let height = min(max(1, preferredHeight), availableHeight)
         return CGRect(x: visibleFrame.maxX - width - 16, y: visibleFrame.maxY - height - 16, width: width, height: height)
     }
 
@@ -29,6 +30,7 @@ final class LookupPanelController: NSObject, NSWindowDelegate {
     private var localMonitor: Any?
     private var menuObservers: [NSObjectProtocol] = []
     private var isTrackingMenu = false
+    private var visibleFrame: CGRect?
     private let escape = GlobalHotKey(id: 2)
     private weak var model: LookupController?
 
@@ -54,10 +56,13 @@ final class LookupPanelController: NSObject, NSWindowDelegate {
             window.isMovable = false
             window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
             window.delegate = self
-            window.contentView = NSHostingView(rootView: LookupPanelView(model: model))
+            window.contentView = NSHostingView(rootView: LookupPanelView(model: model) { [weak self] height in
+                self?.resize(to: height)
+            })
             panel = window
             installDismissal()
         }
+        visibleFrame = screen.visibleFrame
         if let panel {
             let frame = PanelPlacement.frame(in: screen.visibleFrame)
             let start = frame.offsetBy(dx: 0, dy: 8)
@@ -89,6 +94,18 @@ final class LookupPanelController: NSObject, NSWindowDelegate {
         panel?.contentView = nil
         panel?.delegate = nil
         panel = nil
+        visibleFrame = nil
+    }
+
+    private func resize(to preferredHeight: CGFloat) {
+        guard let panel, let visibleFrame else { return }
+        let frame = PanelPlacement.frame(in: visibleFrame, preferredHeight: preferredHeight)
+        guard abs(frame.height - panel.frame.height) > 1 else { return }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.12
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            panel.animator().setFrame(frame, display: true)
+        }
     }
 
     func windowWillClose(_ notification: Notification) { model?.dismiss() }
@@ -139,12 +156,22 @@ private final class ResultPanel: NSPanel {
 
 private struct LookupPanelView: View {
     let model: LookupController
+    let preferredHeightChanged: (CGFloat) -> Void
     @State private var input = ""
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                HStack(alignment: .firstTextBaseline) {
+                    if !model.text.isEmpty {
+                        Text(verbatim: model.text)
+                            .font(.title2)
+                            .textSelection(.enabled)
+                    }
+                    Spacer(minLength: 0)
+                    panelActions
+                }
                 if let failure = model.failure {
                     Label(failure.localizedDescription, systemImage: "exclamationmark.circle")
                     if failure == .permission {
@@ -161,9 +188,6 @@ private struct LookupPanelView: View {
                         Button("Stop") { model.cancelLookup() }
                     }
                 } else if !model.text.isEmpty {
-                    Text(verbatim: model.text)
-                        .font(.title2)
-                        .textSelection(.enabled)
                     Picker("Flow", selection: Binding(get: { model.selectedFlowID }, set: { model.selectFlow($0) })) {
                         Text("Automatic").tag(nil as UUID?)
                         ForEach(model.settings.flows) { flow in
@@ -194,12 +218,6 @@ private struct LookupPanelView: View {
                     if let error = model.lookupError {
                         Text(verbatim: error).foregroundStyle(.secondary)
                     }
-                    if !model.isLoading {
-                        HStack {
-                            Button("Retry") { model.submit(model.text) }
-                            Button("New Lookup") { input = ""; model.showManualEntry() }
-                        }
-                    }
                 } else {
                     Text("Look up text").font(.headline)
                     TextField("Type or paste a word, phrase, or sentence", text: $input, axis: .vertical)
@@ -217,17 +235,13 @@ private struct LookupPanelView: View {
                     Text("Up to 2,000 characters. Looking up sends this text and the matched flow’s prompt to its AI provider.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
-                Button("Settings…") {
-                    model.dismiss()
-                    NSApplication.shared.activate(ignoringOtherApps: true)
-                    openSettings()
-                }
                 if let error = model.dismissalError {
                     Text(verbatim: error).font(.caption).foregroundStyle(.secondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(20)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { preferredHeightChanged($0) }
         }
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
@@ -237,5 +251,31 @@ private struct LookupPanelView: View {
         .clipShape(.rect(cornerRadius: 16))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Glossa lookup")
+    }
+
+    private var panelActions: some View {
+        HStack(spacing: 6) {
+            if !model.text.isEmpty {
+                Button("Retry", systemImage: "arrow.clockwise") { model.retry() }
+                    .disabled(model.isLoading)
+                    .help("Retry")
+                Button("New Lookup", systemImage: "square.and.pencil") {
+                    input = ""
+                    model.showManualEntry()
+                }
+                .help("New Lookup")
+            }
+            Button("Settings", systemImage: "gearshape", action: showSettings)
+                .help("Settings")
+        }
+        .labelStyle(.iconOnly)
+        .buttonStyle(.borderless)
+        .controlSize(.regular)
+    }
+
+    private func showSettings() {
+        model.dismiss()
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        openSettings()
     }
 }
