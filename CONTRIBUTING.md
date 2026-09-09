@@ -8,15 +8,17 @@ Use the build/test commands in [README.md](README.md). The shared **Glossa** sch
 
 Keep changes focused. Add a small runnable check for nontrivial logic, and manually exercise changed UI with keyboard navigation, light/dark appearance, and VoiceOver labels. Use Release builds outside the debugger for performance measurements. Verify minimum supported macOS versions before claiming support for a new API.
 
-The app uses a menu bar scene, a settings scene, and an AppKit nonactivating panel hosting SwiftUI. `LookupController` owns the interaction lifetime; `SelectedTextReader` performs bounded AX reads away from the main actor. Prompt data uses `@AppStorage`; transient manual input uses `@State`. Add services and storage only with the features that use them.
+The app uses a menu bar scene, a settings scene, and an AppKit nonactivating panel hosting SwiftUI. `LookupController` owns the interaction lifetime; `SelectedTextReader` performs bounded AX reads away from the main actor. The observable `LookupSettings` model persists per-flow prompts and provider configuration in local preferences; transient manual input uses `@State`. Add services and storage only with the features that use them.
 
-The current build retains App Sandbox. Test the shortcut and manual-input panel without granting extra permissions. Cross-app selection is intentionally gated until the distribution configuration change is approved; do not bypass that gate with a build override. Once approved, validate Chrome webpages and Preview text PDFs with the following checks:
+The direct-distribution build runs outside App Sandbox. Grant Accessibility access only to a local test build you recognize, then validate Chrome webpages and Preview text PDFs with the following checks:
 
 - Select text, press the shortcut, and verify the result panel stays on the reading window's screen without moving keyboard focus. Click the panel and verify text selection/copy and typing work.
-- Close using Escape, outside click, and the title-bar close button. Repeat at least 20 times, check that only one panel exists, and measure Release physical footprint after settling.
+- Verify the panel has no title bar or traffic-light controls. Close using Escape and outside click. Repeat at least 20 times, check that only one panel exists, and measure Release physical footprint after settling.
 - Record a different shortcut, cancel recording, switch apps mid-recording, and try a shortcut already registered by another app. Verify the active shortcut and error message.
 - Check missing permissions, empty/unavailable selection, a secure text field, exactly 2,000 characters, and an oversized selection. The latter must show an error without silently shortening the input.
 - Verify manual paste does not change the existing clipboard and permission recovery works after the user enables Glossa in System Settings. Check a second screen, a fullscreen reading window, and macOS 14 before claiming those runtime combinations.
+
+For AI changes, run the offline tests, then manually check Settings save/delete, missing or invalid keys, streaming, Stop, Retry, and dismissal during a query. Live queries require your own key and may incur charges; never use them in automated tests. Tests intercept URLSession using URLProtocol and create/delete only randomly named dummy Keychain entries. Changing the base URL must never carry another endpoint’s saved key across.
 
 Before a pull request:
 

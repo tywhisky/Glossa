@@ -27,6 +27,8 @@ final class LookupPanelController: NSObject, NSWindowDelegate {
     private var panel: ResultPanel?
     private var globalMouseMonitor: Any?
     private var localMonitor: Any?
+    private var menuObservers: [NSObjectProtocol] = []
+    private var isTrackingMenu = false
     private let escape = GlobalHotKey(id: 2)
     private weak var model: LookupController?
 
@@ -41,27 +43,44 @@ final class LookupPanelController: NSObject, NSWindowDelegate {
         }
 
         if panel == nil {
-            let window = ResultPanel(contentRect: .zero, styleMask: [.titled, .closable, .nonactivatingPanel], backing: .buffered, defer: true)
-            window.title = "Glossa"
+            let window = ResultPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
             window.level = .floating
             window.isFloatingPanel = true
             window.hidesOnDeactivate = false
             window.isReleasedWhenClosed = false
+            window.isOpaque = false
+            window.backgroundColor = .clear
+            window.hasShadow = true
+            window.isMovable = false
             window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
             window.delegate = self
             window.contentView = NSHostingView(rootView: LookupPanelView(model: model))
             panel = window
             installDismissal()
         }
-        panel?.setFrame(PanelPlacement.frame(in: screen.visibleFrame), display: true)
-        panel?.orderFrontRegardless()
+        if let panel {
+            let frame = PanelPlacement.frame(in: screen.visibleFrame)
+            let start = frame.offsetBy(dx: 0, dy: 8)
+            panel.setFrame(start, display: true)
+            panel.alphaValue = 0
+            panel.orderFrontRegardless()
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.14
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                panel.animator().setFrame(frame, display: true)
+                panel.animator().alphaValue = 1
+            }
+        }
         escape.onPress = { [weak model] in model?.dismiss() }
         let status = escape.register(.escape)
-        return status == noErr ? nil : "Escape is unavailable (error \(status)). Click outside or use the close button."
+        return status == noErr ? nil : "Escape is unavailable (error \(status)). Click outside to close."
     }
 
     func dismiss() {
         escape.stop()
+        menuObservers.forEach(NotificationCenter.default.removeObserver)
+        menuObservers.removeAll()
+        isTrackingMenu = false
         if let globalMouseMonitor { NSEvent.removeMonitor(globalMouseMonitor) }
         if let localMonitor { NSEvent.removeMonitor(localMonitor) }
         globalMouseMonitor = nil
@@ -75,12 +94,32 @@ final class LookupPanelController: NSObject, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) { model?.dismiss() }
 
     private func installDismissal() {
+        // The flow picker's menu has its own window and must receive Escape itself.
+        menuObservers = [
+            NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.isTrackingMenu = true
+                    self?.escape.stop()
+                }
+            },
+            NotificationCenter.default.addObserver(forName: NSMenu.didEndTrackingNotification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.isTrackingMenu = false
+                    let status = self.escape.register(.escape)
+                    self.model?.dismissalError = status == noErr ? nil : "Escape is unavailable (error \(status)). Click outside to close."
+                }
+            }
+        ]
         globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] _ in
-            MainActor.assumeIsolated { self?.model?.dismiss() }
+            MainActor.assumeIsolated {
+                guard let self, !self.isTrackingMenu else { return }
+                self.model?.dismiss()
+            }
         }
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown, .keyDown]) { [weak self] event in
             let consumed = MainActor.assumeIsolated {
-                guard let self else { return false }
+                guard let self, !self.isTrackingMenu else { return false }
                 if event.type == .keyDown {
                     if event.keyCode == 53 { self.model?.dismiss(); return true }
                 } else if event.window !== self.panel {
@@ -101,6 +140,7 @@ private final class ResultPanel: NSPanel {
 private struct LookupPanelView: View {
     let model: LookupController
     @State private var input = ""
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         ScrollView {
@@ -113,17 +153,53 @@ private struct LookupPanelView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                if !model.text.isEmpty {
+                if model.isReadingSelection {
+                    HStack {
+                        ProgressView().controlSize(.small)
+                        Text("Reading selection…")
+                        Spacer()
+                        Button("Stop") { model.cancelLookup() }
+                    }
+                } else if !model.text.isEmpty {
                     Text(verbatim: model.text)
                         .font(.title2)
                         .textSelection(.enabled)
+                    Picker("Flow", selection: Binding(get: { model.selectedFlowID }, set: { model.selectFlow($0) })) {
+                        Text("Automatic").tag(nil as UUID?)
+                        ForEach(model.settings.flows) { flow in
+                            Text("\(flow.title) · \(flow.provider.name)").tag(Optional(flow.id))
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    if model.selectedFlowID == nil,
+                       let flow = model.settings.flows.first(where: { $0.id == model.activeFlowID }) {
+                        Text("\(flow.title) · \(model.settings.providerName(flow.provider))")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                     Divider()
-                    Label("Interaction preview", systemImage: "info.circle")
-                        .font(.headline)
-                    Text("AI lookup is not connected yet. This panel is a preview, not a translation of your selection.")
-                        .foregroundStyle(.secondary)
-                    Text("**Example layout**\n\nA concise definition, followed by usage notes and an example sentence.")
-                        .textSelection(.enabled)
+                    if !model.answer.isEmpty {
+                        // ponytail: inline Markdown plus line breaks; add block layout when needed.
+                        Text((try? AttributedString(markdown: model.answer, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+                             ?? AttributedString(model.answer))
+                            .textSelection(.enabled)
+                    }
+                    if model.isLoading {
+                        HStack {
+                            ProgressView().controlSize(.small)
+                            Text("Looking up…").foregroundStyle(.secondary)
+                            Spacer()
+                            Button("Stop") { model.cancelLookup() }
+                        }
+                    }
+                    if let error = model.lookupError {
+                        Text(verbatim: error).foregroundStyle(.secondary)
+                    }
+                    if !model.isLoading {
+                        HStack {
+                            Button("Retry") { model.submit(model.text) }
+                            Button("New Lookup") { input = ""; model.showManualEntry() }
+                        }
+                    }
                 } else {
                     Text("Look up text").font(.headline)
                     TextField("Type or paste a word, phrase, or sentence", text: $input, axis: .vertical)
@@ -131,15 +207,20 @@ private struct LookupPanelView: View {
                         .textFieldStyle(.roundedBorder)
                         .onSubmit { model.submit(input) }
                     HStack {
-                        Button("Preview") { model.submit(input) }
+                        Button("Look Up") { model.submit(input) }
                             .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         PasteButton(payloadType: String.self) { values in
                             if let first = values.first { input = first }
                         }
                         .labelStyle(.titleAndIcon)
                     }
-                    Text("Up to 2,000 characters. Nothing is sent to an AI provider yet.")
+                    Text("Up to 2,000 characters. Looking up sends this text and the matched flow’s prompt to its AI provider.")
                         .font(.caption).foregroundStyle(.secondary)
+                }
+                Button("Settings…") {
+                    model.dismiss()
+                    NSApplication.shared.activate(ignoringOtherApps: true)
+                    openSettings()
                 }
                 if let error = model.dismissalError {
                     Text(verbatim: error).font(.caption).foregroundStyle(.secondary)
@@ -148,5 +229,13 @@ private struct LookupPanelView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(20)
         }
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.45))
+        }
+        .clipShape(.rect(cornerRadius: 16))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Glossa lookup")
     }
 }

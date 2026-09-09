@@ -4,7 +4,7 @@ import Carbon.HIToolbox
 @testable import Glossa
 
 @Test func promptSubstitutionPreservesUserContent() {
-    #expect(PromptTemplate.defaultValue.contains(PromptTemplate.placeholder))
+    #expect(PromptTemplate.flowDefault.contains(PromptTemplate.placeholder))
     #expect(PromptTemplate.render("Define {{text}} / {{text}}", text: "你好\n**word**") == "Define 你好\n**word** / 你好\n**word**")
     #expect(PromptTemplate.render("{{text}}", text: "literal {{text}}") == "literal {{text}}")
     #expect(PromptTemplate.render("{{text}}", text: "") == "")
@@ -43,7 +43,7 @@ import Carbon.HIToolbox
 }
 
 @MainActor @Test func manualEntryClearsPreviousResultOnFailureAndDismissal() {
-    let model = LookupController()
+    let model = LookupController(settings: isolatedLookupSettings(), lookup: { _, _ in })
     model.submit("bonjour")
     #expect(model.text == "bonjour")
     #expect(model.failure == nil)
@@ -55,4 +55,77 @@ import Carbon.HIToolbox
     model.dismiss()
     #expect(model.text.isEmpty)
     #expect(model.failure == nil)
+}
+
+@MainActor func isolatedLookupSettings() -> LookupSettings {
+    let suite = "GlossaTests.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    defer { defaults.removePersistentDomain(forName: suite) }
+    return LookupSettings(defaults: defaults)
+}
+
+@MainActor @Test func translationFlowsMigrateRoutePersistAndPrepareIndependentRequests() async throws {
+    let suite = "GlossaTests.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let legacy = APIConfiguration(baseURL: "https://example.com/v1", model: "legacy-model")
+    defaults.set(try JSONEncoder().encode(legacy), forKey: APIConfiguration.storageKey)
+    defaults.set("Explain {{text}} my way", forKey: PromptTemplate.storageKey)
+    let settings = LookupSettings(defaults: defaults)
+    let fallback = try #require(settings.flows.first)
+    #expect(fallback.prompt == "Explain {{text}} my way")
+    #expect(settings.configuration(for: fallback.provider) == legacy)
+    #expect(settings.providerName(fallback.provider).contains("Custom endpoint"))
+    #expect(LookupSettings(defaults: defaults).flows == settings.flows)
+    #expect(LookupSettings(defaults: defaults).canEdit)
+
+    let japanese = TranslationFlow(source: .japanese, target: .english, provider: .openAI, model: "flow-model")
+    let english = TranslationFlow(source: .english)
+    settings.flows = [fallback, japanese, english]
+    #expect(TranslationFlow.match(in: settings.flows, language: .japanese)?.id == japanese.id)
+    #expect(TranslationFlow.match(in: settings.flows, language: nil)?.id == fallback.id)
+    #expect(TranslationFlow.match(in: [english], language: .french) == nil)
+    #expect(TranslationFlow.match(in: [], language: .english) == nil)
+    #expect(TranslationFlow.match(in: [fallback, english, TranslationFlow(source: .english)], language: .english) == nil)
+    #expect(FlowLanguage.detect("今日はとても良い天気なので、公園を散歩しましょう。") == .japanese)
+
+    let query = try PreparedLookup(text: "literal {{targetLanguage}}", flow: japanese, configuration: legacy)
+    #expect(query.configuration.model == "flow-model")
+    #expect(query.configuration.baseURL == legacy.baseURL)
+    #expect(query.prompt.contains("Response language: English"))
+    #expect(query.prompt.contains("Text: literal {{targetLanguage}}"))
+    #expect(try PreparedLookup(text: "word", flow: english, configuration: legacy).configuration.model == "legacy-model")
+    var invalid = english
+    invalid.prompt = "No placeholder"
+    #expect(throws: APIError.invalidPrompt) { try PreparedLookup(text: "word", flow: invalid, configuration: legacy) }
+    invalid.prompt = String(repeating: "x", count: 65_536) + "{{text}}"
+    #expect(throws: APIError.invalidPrompt) { try PreparedLookup(text: "word", flow: invalid, configuration: legacy) }
+    try settings.save(.deepSeek, for: .deepSeek)
+    #expect(settings.configuration(for: .openAI) == legacy)
+    #expect(LookupSettings(defaults: defaults).flows == settings.flows)
+
+    let received = AsyncStream<PreparedLookup>.makeStream()
+    let model = LookupController(settings: settings) { request, update in
+        received.continuation.yield(request)
+        await update(request.configuration.model)
+    }
+    var requests = received.stream.makeAsyncIterator()
+    model.selectFlow(japanese.id)
+    model.submit("word")
+    #expect(await requests.next()?.configuration.model == "flow-model")
+    model.selectFlow(english.id)
+    #expect(await requests.next()?.configuration == .deepSeek)
+    model.dismiss()
+    #expect(model.selectedFlowID == nil)
+    received.continuation.finish()
+
+    settings.flows = []
+    #expect(LookupSettings(defaults: defaults).flows.isEmpty)
+    let damaged = Data("invalid saved data".utf8)
+    defaults.set(damaged, forKey: LookupSettings.storageKey)
+    let unreadable = LookupSettings(defaults: defaults)
+    #expect(!unreadable.canEdit)
+    #expect(unreadable.error != nil)
+    unreadable.flows = [english]
+    #expect(defaults.data(forKey: LookupSettings.storageKey) == damaged)
 }

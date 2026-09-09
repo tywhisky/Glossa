@@ -1,25 +1,32 @@
 // !$*UTF8*$!
 {
 	archiveVersion = 1;
-	classes = {};
+	classes = {
+	};
 	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10000000000000000000001 /* GlossaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001; };
-		A10000000000000000000002 /* PromptTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002; };
-		A10000000000000000000003 /* PromptSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003; };
-		A10000000000000000000004 /* PromptTemplateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004; };
-		A1000000000000000000000A /* GlobalHotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A; };
-		A1000000000000000000000B /* SelectedText.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B; };
-		A1000000000000000000000C /* LookupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C; };
-		A1000000000000000000000D /* LookupPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D; };
+		A10000000000000000000001 /* GlossaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* GlossaApp.swift */; };
+		A10000000000000000000002 /* PromptTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* PromptTemplate.swift */; };
+		A10000000000000000000003 /* PromptSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* PromptSettingsView.swift */; };
+		A10000000000000000000004 /* PromptTemplateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* PromptTemplateTests.swift */; };
+		A1000000000000000000000A /* GlobalHotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* GlobalHotKey.swift */; };
+		A1000000000000000000000B /* SelectedText.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* SelectedText.swift */; };
+		A1000000000000000000000C /* LookupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* LookupController.swift */; };
+		A1000000000000000000000D /* LookupPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* LookupPanel.swift */; };
+		A1000000000000000000000E /* APIConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* APIConfiguration.swift */; };
+		A1000000000000000000000F /* ChatCompletionsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000F /* ChatCompletionsClient.swift */; };
+		A10000000000000000000010 /* APISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* APISettingsView.swift */; };
+		A10000000000000000000011 /* ChatCompletionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* ChatCompletionsTests.swift */; };
+		A10000000000000000000012 /* ClipboardSelectionReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* ClipboardSelectionReader.swift */; };
+		A10000000000000000000013 /* TranslationFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* TranslationFlow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		A30000000000000000000001 = {
+		A30000000000000000000001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = A90000000000000000000001;
+			containerPortal = A90000000000000000000001 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = A80000000000000000000001;
 			remoteInfo = Glossa;
@@ -27,53 +34,99 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		A20000000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlossaApp.swift; sourceTree = "<group>"; };
-		A20000000000000000000002 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptTemplate.swift; sourceTree = "<group>"; };
-		A20000000000000000000003 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSettingsView.swift; sourceTree = "<group>"; };
-		A20000000000000000000004 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptTemplateTests.swift; sourceTree = "<group>"; };
-		A20000000000000000000005 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A20000000000000000000006 = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Glossa.entitlements; sourceTree = "<group>"; };
-		A20000000000000000000007 = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
-		A20000000000000000000008 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Glossa.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A20000000000000000000009 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GlossaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A2000000000000000000000A = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKey.swift; sourceTree = "<group>"; };
-		A2000000000000000000000B = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedText.swift; sourceTree = "<group>"; };
-		A2000000000000000000000C = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupController.swift; sourceTree = "<group>"; };
-		A2000000000000000000000D = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupPanel.swift; sourceTree = "<group>"; };
+		A20000000000000000000001 /* GlossaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlossaApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* PromptTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptTemplate.swift; sourceTree = "<group>"; };
+		A20000000000000000000003 /* PromptSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSettingsView.swift; sourceTree = "<group>"; };
+		A20000000000000000000004 /* PromptTemplateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptTemplateTests.swift; sourceTree = "<group>"; };
+		A20000000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A20000000000000000000006 /* Glossa.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Glossa.entitlements; sourceTree = "<group>"; };
+		A20000000000000000000007 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
+		A20000000000000000000008 /* Glossa.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Glossa.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000009 /* GlossaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GlossaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2000000000000000000000A /* GlobalHotKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKey.swift; sourceTree = "<group>"; };
+		A2000000000000000000000B /* SelectedText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedText.swift; sourceTree = "<group>"; };
+		A2000000000000000000000C /* LookupController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupController.swift; sourceTree = "<group>"; };
+		A2000000000000000000000D /* LookupPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupPanel.swift; sourceTree = "<group>"; };
+		A2000000000000000000000E /* APIConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConfiguration.swift; sourceTree = "<group>"; };
+		A2000000000000000000000F /* ChatCompletionsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatCompletionsClient.swift; sourceTree = "<group>"; };
+		A20000000000000000000010 /* APISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APISettingsView.swift; sourceTree = "<group>"; };
+		A20000000000000000000011 /* ChatCompletionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatCompletionsTests.swift; sourceTree = "<group>"; };
+		A20000000000000000000012 /* ClipboardSelectionReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSelectionReader.swift; sourceTree = "<group>"; };
+		A20000000000000000000013 /* TranslationFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationFlow.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A40000000000000000000001 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		A40000000000000000000002 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A40000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A40000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		A50000000000000000000001 = {
 			isa = PBXGroup;
-			children = (A50000000000000000000002, A50000000000000000000003, A50000000000000000000004, A50000000000000000000005);
+			children = (
+				A50000000000000000000002 /* Glossa */,
+				A50000000000000000000003 /* GlossaTests */,
+				A50000000000000000000004 /* Config */,
+				A50000000000000000000005 /* Products */,
+			);
 			sourceTree = "<group>";
 		};
-		A50000000000000000000002 = {
+		A50000000000000000000002 /* Glossa */ = {
 			isa = PBXGroup;
-			children = (A20000000000000000000001, A20000000000000000000002, A20000000000000000000003, A2000000000000000000000A, A2000000000000000000000B, A2000000000000000000000C, A2000000000000000000000D, A20000000000000000000005, A20000000000000000000006);
+			children = (
+				A20000000000000000000001 /* GlossaApp.swift */,
+				A20000000000000000000002 /* PromptTemplate.swift */,
+				A20000000000000000000013 /* TranslationFlow.swift */,
+				A20000000000000000000003 /* PromptSettingsView.swift */,
+				A20000000000000000000010 /* APISettingsView.swift */,
+				A2000000000000000000000F /* ChatCompletionsClient.swift */,
+				A2000000000000000000000E /* APIConfiguration.swift */,
+				A2000000000000000000000A /* GlobalHotKey.swift */,
+				A2000000000000000000000B /* SelectedText.swift */,
+				A20000000000000000000012 /* ClipboardSelectionReader.swift */,
+				A2000000000000000000000C /* LookupController.swift */,
+				A2000000000000000000000D /* LookupPanel.swift */,
+				A20000000000000000000005 /* Info.plist */,
+				A20000000000000000000006 /* Glossa.entitlements */,
+			);
 			path = Glossa;
 			sourceTree = "<group>";
 		};
-		A50000000000000000000003 = {
+		A50000000000000000000003 /* GlossaTests */ = {
 			isa = PBXGroup;
-			children = (A20000000000000000000004);
+			children = (
+				A20000000000000000000004 /* PromptTemplateTests.swift */,
+				A20000000000000000000011 /* ChatCompletionsTests.swift */,
+			);
 			path = GlossaTests;
 			sourceTree = "<group>";
 		};
-		A50000000000000000000004 = {
+		A50000000000000000000004 /* Config */ = {
 			isa = PBXGroup;
-			children = (A20000000000000000000007);
+			children = (
+				A20000000000000000000007 /* Shared.xcconfig */,
+			);
 			path = Config;
 			sourceTree = "<group>";
 		};
-		A50000000000000000000005 = {
+		A50000000000000000000005 /* Products */ = {
 			isa = PBXGroup;
-			children = (A20000000000000000000008, A20000000000000000000009);
+			children = (
+				A20000000000000000000008 /* Glossa.app */,
+				A20000000000000000000009 /* GlossaTests.xctest */,
+			);
 			name = Products;
 			sourceTree = "<group>";
 		};
@@ -82,24 +135,37 @@
 /* Begin PBXNativeTarget section */
 		A80000000000000000000001 /* Glossa */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AB0000000000000000000002;
-			buildPhases = (A60000000000000000000001, A40000000000000000000001, A70000000000000000000001);
-			buildRules = ();
-			dependencies = ();
+			buildConfigurationList = AB0000000000000000000002 /* Build configuration list for PBXNativeTarget "Glossa" */;
+			buildPhases = (
+				A60000000000000000000001 /* Sources */,
+				A40000000000000000000001 /* Frameworks */,
+				A70000000000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
 			name = Glossa;
 			productName = Glossa;
-			productReference = A20000000000000000000008;
+			productReference = A20000000000000000000008 /* Glossa.app */;
 			productType = "com.apple.product-type.application";
 		};
 		A80000000000000000000002 /* GlossaTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AB0000000000000000000003;
-			buildPhases = (A60000000000000000000002, A40000000000000000000002, A70000000000000000000002);
-			buildRules = ();
-			dependencies = (AC0000000000000000000001);
+			buildConfigurationList = AB0000000000000000000003 /* Build configuration list for PBXNativeTarget "GlossaTests" */;
+			buildPhases = (
+				A60000000000000000000002 /* Sources */,
+				A40000000000000000000002 /* Frameworks */,
+				A70000000000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AC0000000000000000000001 /* PBXTargetDependency */,
+			);
 			name = GlossaTests;
 			productName = GlossaTests;
-			productReference = A20000000000000000000009;
+			productReference = A20000000000000000000009 /* GlossaTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -112,43 +178,97 @@
 				LastSwiftUpdateCheck = 1600;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
-					A80000000000000000000001 = {CreatedOnToolsVersion = 16.0; };
-					A80000000000000000000002 = {CreatedOnToolsVersion = 16.0; TestTargetID = A80000000000000000000001; };
+					A80000000000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					A80000000000000000000002 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = A80000000000000000000001;
+					};
 				};
 			};
-			buildConfigurationList = AB0000000000000000000001;
+			buildConfigurationList = AB0000000000000000000001 /* Build configuration list for PBXProject "Glossa" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
-			knownRegions = (en, Base);
+			knownRegions = (
+				en,
+				Base,
+			);
 			mainGroup = A50000000000000000000001;
-			productRefGroup = A50000000000000000000005;
+			productRefGroup = A50000000000000000000005 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
-			targets = (A80000000000000000000001, A80000000000000000000002);
+			targets = (
+				A80000000000000000000001 /* Glossa */,
+				A80000000000000000000002 /* GlossaTests */,
+			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		A70000000000000000000001 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		A70000000000000000000002 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A70000000000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A70000000000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		A60000000000000000000001 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001, A10000000000000000000002, A1000000000000000000000A, A1000000000000000000000B, A1000000000000000000000C, A1000000000000000000000D, A10000000000000000000003); runOnlyForDeploymentPostprocessing = 0; };
-		A60000000000000000000002 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000004); runOnlyForDeploymentPostprocessing = 0; };
+		A60000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* GlossaApp.swift in Sources */,
+				A10000000000000000000002 /* PromptTemplate.swift in Sources */,
+				A10000000000000000000013 /* TranslationFlow.swift in Sources */,
+				A1000000000000000000000A /* GlobalHotKey.swift in Sources */,
+				A1000000000000000000000B /* SelectedText.swift in Sources */,
+				A10000000000000000000012 /* ClipboardSelectionReader.swift in Sources */,
+				A1000000000000000000000C /* LookupController.swift in Sources */,
+				A1000000000000000000000D /* LookupPanel.swift in Sources */,
+				A10000000000000000000003 /* PromptSettingsView.swift in Sources */,
+				A1000000000000000000000E /* APIConfiguration.swift in Sources */,
+				A1000000000000000000000F /* ChatCompletionsClient.swift in Sources */,
+				A10000000000000000000010 /* APISettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A60000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000004 /* PromptTemplateTests.swift in Sources */,
+				A10000000000000000000011 /* ChatCompletionsTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		AC0000000000000000000001 = {isa = PBXTargetDependency; target = A80000000000000000000001; targetProxy = A30000000000000000000001; };
+		AC0000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A80000000000000000000001 /* Glossa */;
+			targetProxy = A30000000000000000000001 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		AA0000000000000000000001 = {
+		AA0000000000000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A20000000000000000000007;
+			baseConfigurationReference = A20000000000000000000007 /* Shared.xcconfig */;
 			buildSettings = {
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 5VU9QQ3J6V;
 				ENABLE_TESTABILITY = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
@@ -156,62 +276,77 @@
 			};
 			name = Debug;
 		};
-		AA0000000000000000000002 = {
+		AA0000000000000000000002 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A20000000000000000000007;
+			baseConfigurationReference = A20000000000000000000007 /* Shared.xcconfig */;
 			buildSettings = {
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 5VU9QQ3J6V;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-Osize";
 			};
 			name = Release;
 		};
-		AA0000000000000000000003 = {
+		AA0000000000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Glossa/Glossa.entitlements;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Glossa/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.tywhisky.Glossa;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
-		AA0000000000000000000004 = {
+		AA0000000000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Glossa/Glossa.entitlements;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Glossa/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.tywhisky.Glossa;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
-		AA0000000000000000000005 = {
+		AA0000000000000000000005 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.tywhisky.GlossaTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Glossa.app/Contents/MacOS/Glossa";
 			};
 			name = Debug;
 		};
-		AA0000000000000000000006 = {
+		AA0000000000000000000006 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.tywhisky.GlossaTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Glossa.app/Contents/MacOS/Glossa";
@@ -221,10 +356,34 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AB0000000000000000000001 = {isa = XCConfigurationList; buildConfigurations = (AA0000000000000000000001, AA0000000000000000000002); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		AB0000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (AA0000000000000000000003, AA0000000000000000000004); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		AB0000000000000000000003 = {isa = XCConfigurationList; buildConfigurations = (AA0000000000000000000005, AA0000000000000000000006); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		AB0000000000000000000001 /* Build configuration list for PBXProject "Glossa" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000000000000000000001 /* Debug */,
+				AA0000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AB0000000000000000000002 /* Build configuration list for PBXNativeTarget "Glossa" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000000000000000000003 /* Debug */,
+				AA0000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AB0000000000000000000003 /* Build configuration list for PBXNativeTarget "GlossaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000000000000000000005 /* Debug */,
+				AA0000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 	};
-	rootObject = A90000000000000000000001;
+	rootObject = A90000000000000000000001 /* Project object */;
 }

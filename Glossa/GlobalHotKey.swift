@@ -18,6 +18,7 @@ struct LookupShortcut: Codable, Equatable, Sendable {
     var isValid: Bool {
         let allowed = UInt32(controlKey | optionKey | shiftKey | cmdKey)
         return keyCode < 128 && keyCode != UInt32(kVK_Escape)
+            && !(keyCode == UInt32(kVK_ANSI_C) && modifiers == UInt32(cmdKey))
             && modifiers & UInt32(controlKey | optionKey | cmdKey) != 0
             && modifiers & ~allowed == 0 && !key.isEmpty && key.count <= 16
     }

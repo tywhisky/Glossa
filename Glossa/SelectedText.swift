@@ -1,5 +1,6 @@
 import ApplicationServices
 import Foundation
+import Carbon.HIToolbox
 
 enum LookupInput {
     static let limit = 2_000
@@ -13,14 +14,19 @@ enum LookupInput {
 }
 
 enum SelectionFailure: Error, LocalizedError {
-    case restrictedBuild, permission, unavailable, tooLong
+    case permission, unavailable, tooLong, secureInput, heldModifiers
+    case clipboardUnavailable, clipboardChanged, clipboardRestoreFailed
 
     var errorDescription: String? {
         switch self {
-        case .restrictedBuild: "Selected-text access is unavailable in this build. Type or paste your text below."
         case .permission: "Allow Accessibility access to read the selected text, or paste it here."
         case .unavailable: "No readable selection was found. Select text and try again, or paste it here."
         case .tooLong: "Select at most 2,000 characters. Your selection has not been shortened."
+        case .secureInput: "Glossa does not capture text while secure keyboard input is active."
+        case .heldModifiers: "Release the shortcut keys after pressing them, then try again."
+        case .clipboardUnavailable: "Automatic Copy was skipped because the current clipboard could not be safely preserved."
+        case .clipboardChanged: "The clipboard changed during capture. Glossa left the newer contents untouched. Try again."
+        case .clipboardRestoreFailed: "macOS could not restore the previous clipboard contents."
         }
     }
 }
@@ -32,14 +38,15 @@ struct TextSelection: Sendable {
 }
 
 actor SelectedTextReader {
-    func read(from processID: pid_t) -> TextSelection {
-        guard Bundle.main.object(forInfoDictionaryKey: "GlossaSandboxed") as? String != "YES" else {
-            return .init(text: nil, windowFrame: nil, failure: .restrictedBuild)
-        }
+    private var deadline = ContinuousClock().now
+
+    func read(from processID: pid_t) async -> TextSelection {
         guard AXIsProcessTrusted() else { return .init(text: nil, windowFrame: nil, failure: .permission) }
+        guard !IsSecureEventInputEnabled() else { return .init(text: nil, windowFrame: nil, failure: .secureInput) }
         guard !Task.isCancelled else { return .init(text: nil, windowFrame: nil, failure: .unavailable) }
-        AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), 0.2)
+        deadline = ContinuousClock().now + .milliseconds(800)
         let application = AXUIElementCreateApplication(processID)
+        AXUIElementSetMessagingTimeout(application, 0.2)
         let window = element(kAXFocusedWindowAttribute, of: application)
         let frame = window.flatMap(windowFrame)
         var focused = element(kAXFocusedUIElementAttribute, of: application)
@@ -48,7 +55,7 @@ actor SelectedTextReader {
         for _ in 0..<6 {
             guard let current = focused, !Task.isCancelled else { break }
             if attribute(kAXSubroleAttribute, of: current) as? String == kAXSecureTextFieldSubrole {
-                break
+                return .init(text: nil, windowFrame: frame, failure: .secureInput)
             }
             if let text = attribute(kAXSelectedTextAttribute, of: current) as? String,
                !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -60,10 +67,17 @@ actor SelectedTextReader {
             }
             focused = element(kAXParentAttribute, of: current)
         }
-        return .init(text: nil, windowFrame: frame, failure: .unavailable)
+        do {
+            try Task.checkCancellation()
+            let text = try await ClipboardSelectionReader.shared.read(from: processID)
+            return .init(text: text, windowFrame: frame, failure: nil)
+        } catch {
+            return .init(text: nil, windowFrame: frame, failure: (error as? SelectionFailure) ?? .unavailable)
+        }
     }
 
     private func attribute(_ name: String, of element: AXUIElement) -> CFTypeRef? {
+        guard !Task.isCancelled, ContinuousClock().now < deadline else { return nil }
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success else { return nil }
         return value
