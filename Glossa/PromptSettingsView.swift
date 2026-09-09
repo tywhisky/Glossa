@@ -4,6 +4,8 @@ import SwiftUI
 
 struct PromptSettingsView: View {
     let model: LookupController
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pane = SettingsPane.lookup
 
     var body: some View {
         VStack(spacing: 0) {
@@ -11,16 +13,114 @@ struct PromptSettingsView: View {
                 Label(error, systemImage: "exclamationmark.triangle")
                     .foregroundStyle(.orange).padding()
             }
-            TabView {
+            HStack(spacing: 8) {
+                ForEach(SettingsPane.allCases) { item in
+                    Button {
+                        pane = item
+                    } label: {
+                        Label(item.title, systemImage: item.systemImage)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(pane == item ? Color.accentColor : .secondary)
+                    .background(pane == item ? Color.accentColor.opacity(0.12) : .clear,
+                                in: .rect(cornerRadius: 8))
+                    .accessibilityAddTraits(pane == item ? .isSelected : [])
+                }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Settings sections")
+            .padding(12)
+
+            Divider()
+
+            ZStack(alignment: .top) {
                 LookupSettingsView(model: model)
-                    .tabItem { Label("Lookup", systemImage: "keyboard") }
+                    .settingsPane(isActive: pane == .lookup)
                 APISettingsView(settings: model.settings)
-                    .tabItem { Label("AI Providers", systemImage: "sparkles") }
+                    .settingsPane(isActive: pane == .providers)
                 TranslationFlowsView(settings: model.settings)
-                    .tabItem { Label("Translation Flows", systemImage: "character.bubble") }
+                    .settingsPane(isActive: pane == .flows)
             }
         }
-        .frame(width: 620, height: 620)
+        .frame(width: 620)
+        .fixedSize(horizontal: false, vertical: true)
+        .disclosureGroupStyle(SettingsDisclosureGroupStyle())
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: pane)
+    }
+}
+
+private enum SettingsPane: CaseIterable, Identifiable {
+    case lookup, providers, flows
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .lookup: "Lookup"
+        case .providers: "AI Providers"
+        case .flows: "Translation Flows"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .lookup: "keyboard"
+        case .providers: "sparkles"
+        case .flows: "character.bubble"
+        }
+    }
+}
+
+private struct SettingsDisclosureGroupStyle: DisclosureGroupStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        SettingsDisclosureGroup(configuration: configuration)
+    }
+}
+
+private struct SettingsDisclosureGroup: View {
+    let configuration: DisclosureGroupStyleConfiguration
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                configuration.isExpanded.toggle()
+            } label: {
+                HStack(spacing: 8) {
+                    configuration.label
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(configuration.isExpanded ? 90 : 0))
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(configuration.isExpanded ? "Expanded" : "Collapsed")
+            .accessibilityHint("Toggles this settings section")
+
+            if configuration.isExpanded {
+                configuration.content
+                    .padding(.leading, 18)
+                    .padding(.top, 8)
+                    .transition(reduceMotion ? .identity : .opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: configuration.isExpanded)
+    }
+}
+
+private extension View {
+    func settingsPane(isActive: Bool) -> some View {
+        opacity(isActive ? 1 : 0)
+            .frame(height: isActive ? nil : 0)
+            .clipped()
+            .allowsHitTesting(isActive)
+            .accessibilityHidden(!isActive)
     }
 }
 
@@ -155,6 +255,7 @@ private struct TranslationFlowEditor: View {
                 Text("Preview only. No AI request is sent.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            .disclosureGroupStyle(SettingsDisclosureGroupStyle())
             Button("Delete Flow…", role: .destructive) { confirmsDelete = true }
                 .padding(.top, 8)
                 .alert("Delete this flow?", isPresented: $confirmsDelete) {

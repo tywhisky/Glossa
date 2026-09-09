@@ -13,6 +13,7 @@ struct GlossaApp: App {
         Settings {
             PromptSettingsView(model: delegate.lookup)
         }
+        .windowResizability(.contentSize)
     }
 }
 

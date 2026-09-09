@@ -14,6 +14,6 @@ Exclude static dictionaries, OCR/screen capture, lessons, embedded browsers for 
 - Keep captured text access user-triggered. Implement and test Accessibility/distribution constraints before enabling cross-app selection.
 - For wordbook storage or iCloud changes, read the sync constraints in `README.md`. Surface persistence failures without replacing a failed store with an empty one.
 - For build/signing changes, use ignored `Config/Local.xcconfig` for personal settings. Commit only placeholder configuration.
-- Run the README build/test commands for code changes, plus the relevant UI check. Add one focused regression check for nontrivial behavior; never contact paid AI APIs in automated tests.
+- For code changes, finish when the relevant README build command succeeds. Run tests and UI acceptance only when the user explicitly requests them; never contact paid AI APIs in automated tests.
 
 The README distinguishes implemented behavior from planned features; update it when that boundary moves.
