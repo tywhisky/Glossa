@@ -12,7 +12,7 @@ Glossa aims to make looking up a word disappear into the reading experience: sel
 
 Available now:
 
-- A native menu bar app with no Dock icon or launch window.
+- A native menu bar app with a 16-point template icon and no launch window; its Dock icon appears while Settings or a lookup panel is open (including minimized windows), and hides when the last one closes. The menu bar itself does not count as an open window. Interactive verification of these transitions is pending.
 - Configurable global shortcuts for selected-text lookup (Option+A by default) and manual input (Option+Shift+A), with conflict reporting and recording in Settings.
 - A borderless top-right panel on the reading window's screen, with manual typing/pasting, streaming results, Escape/outside-click dismissal, and replacement of the previous result.
 - Input validation for words, phrases, and sentences up to 2,000 Swift characters (extended grapheme clusters), without truncating oversized selections.
@@ -34,7 +34,7 @@ Static dictionaries, OCR, screen capture, lessons, and a local inference engine 
 
 ## Build and run
 
-Requires macOS 14 or newer and Xcode 16 or newer. Open `Glossa.xcodeproj`, select the **Glossa** scheme and **My Mac**, then Run. Look for the book/G symbol in the menu bar. Use **Settings…** to edit your AI providers, shortcuts, and translation flows, **Type or Paste Text…** to open the lookup panel, and **Quit Glossa** to exit. After granting selected-text access, select text in another app and press Option+A to look it up automatically, or press Option+Shift+A to open manual input with its text field focused.
+Requires macOS 14 or newer and Xcode 16 or newer. Open `Glossa.xcodeproj`, select the **Glossa** scheme and **My Mac**, then Run. Look for the Glossa symbol in the menu bar. Use **Settings…** to edit your AI providers, shortcuts, and translation flows, **Type or Paste Text…** to open the lookup panel, and **Quit Glossa** to exit. After granting selected-text access, select text in another app and press Option+A to look it up automatically, or press Option+Shift+A to open manual input with its text field focused.
 
 No packages, API keys, environment files, or paid developer membership are required to build and run offline tests. A real lookup requires your provider API key and sufficient account balance. Local builds use ad-hoc signing unless the ignored `Config/Local.xcconfig` supplies an Apple Development identity. A distributable app will need a Developer ID identity and notarization.
 

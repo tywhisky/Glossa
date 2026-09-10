@@ -21,6 +21,8 @@
 		A10000000000000000000011 /* ChatCompletionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* ChatCompletionsTests.swift */; };
 		A10000000000000000000012 /* ClipboardSelectionReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* ClipboardSelectionReader.swift */; };
 		A10000000000000000000013 /* TranslationFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* TranslationFlow.swift */; };
+		A10000000000000000000014 /* GlossaIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* GlossaIcon.icon */; };
+		A10000000000000000000015 /* dict.svg in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* dict.svg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,6 +55,8 @@
 		A20000000000000000000011 /* ChatCompletionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatCompletionsTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000012 /* ClipboardSelectionReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSelectionReader.swift; sourceTree = "<group>"; };
 		A20000000000000000000013 /* TranslationFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationFlow.swift; sourceTree = "<group>"; };
+		A20000000000000000000014 /* GlossaIcon.icon */ = {isa = PBXFileReference; path = GlossaIcon.icon; sourceTree = "<group>"; };
+		A20000000000000000000015 /* dict.svg */ = {isa = PBXFileReference; path = GlossaIcon.icon/Assets/dict.svg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,6 +80,8 @@
 		A50000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
+				A20000000000000000000014 /* GlossaIcon.icon */,
+				A20000000000000000000015 /* dict.svg */,
 				A50000000000000000000002 /* Glossa */,
 				A50000000000000000000003 /* GlossaTests */,
 				A50000000000000000000004 /* Config */,
@@ -211,6 +217,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000014 /* GlossaIcon.icon in Resources */,
+				A10000000000000000000015 /* dict.svg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -290,6 +298,7 @@
 		AA0000000000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = GlossaIcon;
 				CODE_SIGN_ENTITLEMENTS = Glossa/Glossa.entitlements;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -307,6 +316,7 @@
 		AA0000000000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = GlossaIcon;
 				CODE_SIGN_ENTITLEMENTS = Glossa/Glossa.entitlements;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;

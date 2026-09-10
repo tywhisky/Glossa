@@ -153,7 +153,7 @@ final class LookupPanelController: NSObject, NSWindowDelegate {
     }
 }
 
-private final class ResultPanel: NSPanel {
+final class ResultPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 }

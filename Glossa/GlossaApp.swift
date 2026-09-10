@@ -9,13 +9,8 @@ struct GlossaApp: App {
         MenuBarExtra {
             GlossaMenu(model: delegate.lookup)
         } label: {
-            ZStack {
-                Image(systemName: "book.closed")
-                Text("G")
-                    .font(.system(size: 7, weight: .bold, design: .rounded))
-                    .offset(y: 1)
-            }
-            .accessibilityLabel("Glossa")
+            Image(nsImage: Self.menuBarIcon)
+                .accessibilityLabel("Glossa")
         }
 
         Settings {
@@ -24,6 +19,16 @@ struct GlossaApp: App {
         .defaultSize(width: 620, height: 560)
         .windowResizability(.contentMinSize)
     }
+
+    private static let menuBarIcon: NSImage = {
+        let image = Bundle.main.url(forResource: "dict", withExtension: "svg").flatMap(NSImage.init(contentsOf:))
+            ?? NSImage(systemSymbolName: "book.closed", accessibilityDescription: "Glossa")
+            ?? NSImage()
+        // MenuBarExtra uses the native image size rather than SwiftUI frame modifiers.
+        image.size = NSSize(width: 16, height: 16)
+        image.isTemplate = true
+        return image
+    }()
 }
 
 @MainActor
@@ -33,10 +38,34 @@ final class GlossaDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Hosted tests must not register global shortcuts or read other apps.
         guard NSClassFromString("XCTestCase") == nil else { return }
+        NotificationCenter.default.addObserver(self, selector: #selector(windowWillClose(_:)),
+                                               name: NSWindow.willCloseNotification, object: nil)
         lookup.start()
     }
 
-    func applicationWillTerminate(_ notification: Notification) { lookup.stop() }
+    func applicationDidUpdate(_ notification: Notification) {
+        updateDockVisibility()
+    }
+
+    @objc private func windowWillClose(_ notification: Notification) {
+        // willClose is sent before isVisible changes; reconcile after the close completes.
+        DispatchQueue.main.async { [weak self] in self?.updateDockVisibility() }
+    }
+
+    private func updateDockVisibility() {
+        let hasOpenWindow = NSApp.windows.contains {
+            // The status item also owns a visible window, but must not keep the Dock icon alive.
+            ($0.canBecomeMain || $0 is ResultPanel) && ($0.isVisible || $0.isMiniaturized)
+        }
+        let policy: NSApplication.ActivationPolicy = hasOpenWindow ? .regular : .accessory
+        guard NSApp.activationPolicy() != policy else { return }
+        NSApp.setActivationPolicy(policy)
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        NotificationCenter.default.removeObserver(self)
+        lookup.stop()
+    }
 }
 
 private struct GlossaMenu: View {
