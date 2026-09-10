@@ -16,7 +16,7 @@ Available now:
 - Configurable global shortcuts for selected-text lookup (Option+A by default) and manual input (Option+Shift+A), with conflict reporting and recording in Settings.
 - A borderless top-right panel on the reading window's screen, with manual typing/pasting, streaming results, Escape/outside-click dismissal, and replacement of the previous result.
 - Input validation for words, phrases, and sentences up to 2,000 Swift characters (extended grapheme clusters), without truncating oversized selections.
-- Separate, collapsible DeepSeek and OpenAI configurations with a default model per provider; credentials stored per base URL in macOS Keychain.
+- Separate, collapsible DeepSeek, OpenAI, Gemini, Claude (experimental), Qwen, Kimi, Grok, and Mistral configurations with a default model per provider; credentials stored per base URL in macOS Keychain. New presets are documentation-reviewed, not live-key verified.
 - Cancellable streaming, stop/retry, bounded responses, a five-minute 16-entry in-memory result cache, and native inline Markdown (bold, emphasis, code, links, and preserved line breaks). Block headings, tables, HTML, and CSS layout are not implemented.
 - Native Settings panes for Lookup, AI Providers, and Translation Flows; an inline shortcut recorder and a separate permission group.
 - Collapsible language flows with individual prompts, provider selection, optional model overrides, and offline prompt previews. Source-language matching uses macOS Natural Language on demand; the result panel supports manual flow selection.
@@ -58,13 +58,28 @@ export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 
 For optional personal signing settings, copy `Config/Local.xcconfig.example` to the ignored `Config/Local.xcconfig`. Keep the shared configuration free of developer team IDs and machine paths.
 
+## Additional provider presets
+
+Official documentation reviewed on 2026-09-10. These are text-only Chat Completions presets, **not live-tested integrations**; no paid API requests were made. Existing endpoints, model overrides, flows, and Keychain entries are preserved when missing presets are added. Model IDs remain editable; access depends on the account and region.
+
+| Provider / official reference | Default model | Base URL |
+| --- | --- | --- |
+| [Gemini](https://ai.google.dev/gemini-api/docs/openai) | `gemini-3.8-flash` | `https://generativelanguage.googleapis.com/v1beta/openai` |
+| [Claude](https://platform.claude.com/docs/en/cli-sdks-libraries/libraries/openai-sdk) | `claude-haiku-4-5-20251001` | `https://api.anthropic.com/v1` |
+| [Qwen](https://help.aliyun.com/zh/model-studio/qwen-api-via-openai-chat-completions) | `qwen3.8-max` | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
+| [Kimi](https://platform.kimi.ai/docs/api/models-overview) | `kimi-k2.6` | `https://api.moonshot.ai/v1` |
+| [Grok](https://docs.x.ai/developers/model-capabilities/legacy/chat-completions) | `grok-4.6` | `https://api.x.ai/v1` |
+| [Mistral](https://docs.mistral.ai/api/endpoint/chat) | `mistral-small-latest` | `https://api.mistral.ai/v1` |
+
+Claude uses Anthropic's experimental compatibility layer, not native Messages; Anthropic recommends native integration for production. Use a workspace-scoped key. [Haiku](https://platform.claude.com/docs/en/models/overview) is chosen for response speed, not because it is the newest flagship. Qwen defaults to Beijing's still-supported shared domain; Alibaba recommends replacing it with your region's workspace-specific URL. Kimi uses the international endpoint and defaults to non-thinking K2.6 for dictionary latency; entering `kimi-k3` enables its documented low reasoning effort. Grok uses the still-supported legacy Chat Completions endpoint. No tools, multimodal input, provider SDKs, automatic model discovery, or native provider protocols are added.
+
 ## Configure DeepSeek
 
 In **Settings… → AI Providers**, expand DeepSeek and use its defaults: base URL `https://api.deepseek.com`, model `deepseek-v4-flash`. Enter your key in the secure field and click **Save**. Then use **Type or Paste Text… → Look Up**. Glossa sends the assembled prompt only when you initiate a lookup or retry. Saving settings and previewing a prompt do not call an API.
 
 The URL, model, request builder, and SSE decoder are shared with OpenAI-compatible Chat Completions endpoints. OpenAI has its own configuration, initially `https://api.openai.com/v1` with `gpt-4.1-mini`. Use a base URL, not the complete `/chat/completions` path, and choose a supported Chat Completions model. Custom endpoints are labeled in Settings. Keys are scoped to the normalized base URL; changing endpoints does not reuse another endpoint’s key. A saved key appears as a masked password value; focus the field and type to replace it, or use **Delete Key** to remove it for the displayed URL.
 
-DeepSeek requests explicitly disable thinking for short dictionary responses. That extension is omitted for other hosts. The client requests at most 2,048 output tokens; it limits assembled prompts and output to 64 KiB, SSE events to 64 KiB, and received stream data to 1 MiB. Requests use an ephemeral session, a 30-second inactivity timeout and a 90-second resource timeout, with no automatic retry, disk cache, cookies, or redirects. Completed results may be reused from the five-minute in-memory cache; Retry bypasses it. Truncated or interrupted responses are marked as incomplete.
+DeepSeek and official Kimi K2.6 requests disable thinking for short dictionary responses. Gemini 3.8 Flash and Kimi K3 use low reasoning effort; Qwen 3.8 Max disables thinking on official DashScope/workspace hosts. Other models keep server defaults. The client requests at most 2,048 tokens (reasoning can consume this budget); it limits assembled prompts and output to 64 KiB, SSE events to 64 KiB, and received stream data to 1 MiB. Requests use an ephemeral session, a 30-second inactivity timeout and a 90-second resource timeout, with no automatic retry, disk cache, cookies, or redirects. Completed results may be reused from the five-minute in-memory cache; Retry bypasses it. Truncated or interrupted responses are marked as incomplete.
 
 Defaults and protocol reviewed on 2026-09-08 against the [DeepSeek documentation](https://api-docs.deepseek.com/) and [OpenAI Chat Completions streaming reference](https://developers.openai.com/api/reference/resources/chat/subresources/completions/streaming-events). Compatibility here means streaming Chat Completions with text deltas and `max_tokens`; it does not include Responses, tools, images, or every model-specific option.
 

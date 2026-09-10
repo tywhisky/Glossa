@@ -77,6 +77,19 @@ data: [DONE]
     #expect(throws: APIError.missingKey) { try APIKeyStore.read(for: first) }
 }
 
+@Test func providerDefaultsBuildOfflineRequestsWithScopedReasoningParameters() throws {
+    for provider in AIProvider.allCases {
+        let request = try ChatCompletionsClient.request(configuration: provider.defaults, key: "offline-key", prompt: "word")
+        #expect(request.url?.path.hasSuffix("/chat/completions") == true)
+        let data = try #require(request.httpBody)
+        let body = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(body["model"] as? String == provider.defaults.model)
+        #expect((body["thinking"] != nil) == (provider == .deepSeek || provider == .kimi))
+        #expect((body["reasoning_effort"] as? String) == (provider == .gemini ? "low" : nil))
+        #expect((body["enable_thinking"] as? Bool) == (provider == .qwen ? false : nil))
+    }
+}
+
 private final class OfflineProtocol: URLProtocol, @unchecked Sendable {
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }

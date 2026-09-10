@@ -3,11 +3,40 @@ import NaturalLanguage
 import Observation
 
 enum AIProvider: String, Codable, CaseIterable, Identifiable, Sendable {
-    case openAI, deepSeek
+    case openAI, deepSeek, gemini, claude, qwen, kimi, grok, mistral
     var id: Self { self }
-    var name: String { self == .deepSeek ? "DeepSeek" : "OpenAI" }
+    var name: String {
+        switch self {
+        case .openAI: "OpenAI"
+        case .deepSeek: "DeepSeek"
+        case .gemini: "Google Gemini"
+        case .claude: "Claude (experimental)"
+        case .qwen: "Qwen · 通义千问"
+        case .kimi: "Kimi"
+        case .grok: "xAI Grok"
+        case .mistral: "Mistral"
+        }
+    }
     var defaults: APIConfiguration {
-        self == .deepSeek ? .deepSeek : .init(baseURL: "https://api.openai.com/v1", model: "gpt-4.1-mini")
+        switch self {
+        case .openAI: .init(baseURL: "https://api.openai.com/v1", model: "gpt-4.1-mini")
+        case .deepSeek: .deepSeek
+        case .gemini: .init(baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-3.8-flash")
+        case .claude: .init(baseURL: "https://api.anthropic.com/v1", model: "claude-haiku-4-5-20251001")
+        case .qwen: .init(baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1", model: "qwen3.8-max")
+        case .kimi: .init(baseURL: "https://api.moonshot.ai/v1", model: "kimi-k2.6")
+        case .grok: .init(baseURL: "https://api.x.ai/v1", model: "grok-4.6")
+        case .mistral: .init(baseURL: "https://api.mistral.ai/v1", model: "mistral-small-latest")
+        }
+    }
+
+    var setupNote: String {
+        switch self {
+        case .claude: "Experimental OpenAI compatibility, not the native Messages API. Use a workspace-scoped API key. Haiku is selected for short, fast responses."
+        case .qwen: "Defaults to the Beijing endpoint. Your key and model must match the region; you can paste your workspace-specific compatible-mode base URL."
+        case .kimi: "Uses the international Moonshot endpoint. K2.6 runs without thinking for short responses; kimi-k3 is also supported with low reasoning effort."
+        default: "Uses streaming Chat Completions. Enter a model ID available to your API account."
+        }
     }
 }
 
@@ -110,7 +139,8 @@ final class LookupSettings {
                 let saved = try JSONDecoder().decode(Saved.self, from: data)
                 guard Set(saved.flows.map(\.id)).count == saved.flows.count,
                       saved.flows.allSatisfy({ $0.target != .automatic }),
-                      AIProvider.allCases.allSatisfy({ saved.configurations[$0] != nil }) else {
+                      [AIProvider.openAI, .deepSeek].allSatisfy({ saved.configurations[$0] != nil }),
+                      saved.flows.allSatisfy({ saved.configurations[$0.provider] != nil }) else {
                     throw APIError.invalidConfiguration
                 }
                 flows = saved.flows.map { flow in
@@ -119,7 +149,12 @@ final class LookupSettings {
                     return flow
                 }
                 configurations = saved.configurations
-                if flows != saved.flows { try write(flows: flows, configurations: configurations) }
+                for provider in AIProvider.allCases where configurations[provider] == nil {
+                    configurations[provider] = provider.defaults
+                }
+                if flows != saved.flows || configurations != saved.configurations {
+                    try write(flows: flows, configurations: configurations)
+                }
             } else {
                 var configuration = APIConfiguration.deepSeek
                 if let data = defaults.data(forKey: APIConfiguration.storageKey) {

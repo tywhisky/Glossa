@@ -81,6 +81,26 @@ import Carbon.HIToolbox
     #expect(model.failure == nil)
 }
 
+@MainActor @Test func addingProvidersPreservesSavedConfigurationsAndFlows() throws {
+    struct Saved: Codable {
+        var flows: [TranslationFlow]
+        var configurations: [AIProvider: APIConfiguration]
+    }
+    let suite = "GlossaTests.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let custom = APIConfiguration(baseURL: "https://example.com/v1", model: "my-model")
+    let saved = Saved(flows: [TranslationFlow(provider: .openAI, prompt: "Custom {{text}}")],
+                      configurations: [.openAI: custom, .deepSeek: .deepSeek])
+    defaults.set(try JSONEncoder().encode(saved), forKey: LookupSettings.storageKey)
+    let settings = LookupSettings(defaults: defaults)
+    #expect(settings.canEdit)
+    #expect(settings.flows == saved.flows)
+    #expect(settings.configuration(for: .openAI) == custom)
+    #expect(settings.configurations.count == AIProvider.allCases.count)
+    #expect(LookupSettings(defaults: defaults).configurations == settings.configurations)
+}
+
 @MainActor func isolatedLookupSettings() -> LookupSettings {
     let suite = "GlossaTests.\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: suite)!

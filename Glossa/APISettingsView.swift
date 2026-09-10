@@ -44,6 +44,11 @@ private struct ProviderSettingsEditor: View {
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             Group {
+                Text(provider.setupNote).font(.caption).foregroundStyle(.secondary)
+                if provider != .openAI && provider != .deepSeek {
+                    Text("Documentation-reviewed; not verified with a live API key.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 TextField("Base URL", text: $configuration.baseURL)
                     .autocorrectionDisabled()
                     .onChange(of: configuration.baseURL) { _, _ in

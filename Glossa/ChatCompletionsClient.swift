@@ -13,6 +13,19 @@ struct ChatCompletionsClient: Sendable {
         var body: [String: Any] = ["model": configuration.model, "stream": true, "max_tokens": 2_048,
                                    "messages": [["role": "user", "content": prompt]]]
         if configuration.isDeepSeek { body["thinking"] = ["type": "disabled"] }
+        let host = request.url?.host ?? ""
+        let model = configuration.model
+        if host == "api.moonshot.ai" {
+            if model == "kimi-k2.6" { body["thinking"] = ["type": "disabled"] }
+            if model == "kimi-k3" { body["reasoning_effort"] = "low" }
+        }
+        if host == "generativelanguage.googleapis.com", model == "gemini-3.8-flash" {
+            body["reasoning_effort"] = "low"
+        }
+        if (host == "dashscope.aliyuncs.com" || host == "dashscope-intl.aliyuncs.com"
+            || host.hasSuffix(".maas.aliyuncs.com")), model == "qwen3.8-max" {
+            body["enable_thinking"] = false
+        }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         return request
     }
