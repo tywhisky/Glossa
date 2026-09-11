@@ -171,7 +171,6 @@ private struct LookupPanelView: View {
                 HStack(alignment: .firstTextBaseline) {
                     if !model.text.isEmpty {
                         Text(verbatim: model.text)
-                            .font(.title2)
                             .textSelection(.enabled)
                     }
                     Spacer(minLength: 0)
@@ -193,19 +192,52 @@ private struct LookupPanelView: View {
                         Button("Stop") { model.cancelLookup() }
                     }
                 } else if !model.text.isEmpty {
-                    Picker("Flow", selection: Binding(get: { model.selectedFlowID }, set: { model.selectFlow($0) })) {
-                        Text("Automatic").tag(nil as UUID?)
-                        ForEach(model.settings.flows) { flow in
-                            Text("\(flow.title) · \(flow.provider.name)").tag(Optional(flow.id))
+                    HStack(spacing: 12) {
+                        Picker("Mode", selection: Binding(get: { model.selectedMode }, set: { model.selectMode($0) })) {
+                            Text(model.selectedMode == nil ? (model.activeMode.map { "Auto · \($0.name)" } ?? "Auto") : "Auto")
+                                .tag(nil as LookupMode?)
+                            ForEach(LookupMode.allCases) { mode in
+                                Text(mode.name).tag(Optional(mode))
+                            }
                         }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                        .accessibilityLabel("Mode")
+                        .fixedSize()
+                        Menu {
+                            Picker("Flow", selection: Binding(get: { model.selectedFlowID }, set: { model.selectFlow($0) })) {
+                                Text("Automatic").tag(nil as UUID?)
+                                ForEach(model.settings.flows) { flow in
+                                    Text("\(flow.title) · \(flow.provider.name)").tag(Optional(flow.id))
+                                }
+                            }
+                            .labelsHidden()
+                        } label: {
+                            Text(model.selectedFlowID == nil ? "Flow: Auto" : "Flow: Manual")
+                        }
+                        .fixedSize()
+                        .accessibilityLabel("Flow")
+                        .accessibilityValue(model.selectedFlowID == nil ? "Automatic" : "Manual")
+                        Spacer(minLength: 0)
                     }
-                    .pickerStyle(.menu)
-                    if model.selectedFlowID == nil,
-                       let flow = model.settings.flows.first(where: { $0.id == model.activeFlowID }) {
+                    .controlSize(.small)
+                    if let flow = model.settings.flows.first(where: { $0.id == model.activeFlowID }) {
                         Text("\(flow.title) · \(model.settings.providerName(flow.provider))")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     Divider()
+                    if let previous = model.wordbook.previous(term: model.text, sourceLanguage: model.lookupSourceLanguage),
+                       previous.id != model.savedEntryID {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Label("You saved this on \(previous.createdAt.formatted(date: .abbreviated, time: .omitted))", systemImage: "bookmark.fill")
+                                .font(.caption).foregroundStyle(.secondary)
+                            if !previous.meaningMarkdown.isEmpty {
+                                Text(verbatim: previous.meaningMarkdown).font(.callout)
+                            } else if !previous.context.isEmpty {
+                                Text(verbatim: previous.context).font(.callout).lineLimit(3)
+                            }
+                        }
+                    }
                     if !model.answer.isEmpty {
                         // ponytail: inline Markdown plus line breaks; add block layout when needed.
                         Text((try? AttributedString(markdown: model.answer, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
@@ -222,6 +254,17 @@ private struct LookupPanelView: View {
                     }
                     if let error = model.lookupError {
                         Text(verbatim: error).foregroundStyle(.secondary)
+                    }
+                    if let error = model.wordbookError {
+                        Text(verbatim: error).font(.caption).foregroundStyle(.orange)
+                    }
+                    if model.savedEntryID != nil {
+                        HStack {
+                            Label("Saved to Wordbook", systemImage: "checkmark")
+                                .font(.caption).foregroundStyle(.secondary)
+                            Spacer()
+                            Button("Open Wordbook") { model.showWordbook() }.controlSize(.small)
+                        }
                     }
                 } else {
                     Text("Look up text").font(.headline)
@@ -266,6 +309,10 @@ private struct LookupPanelView: View {
     private var panelActions: some View {
         HStack(spacing: 6) {
             if !model.text.isEmpty {
+                Button(model.savedEntryID == nil ? "Save to Wordbook" : "Saved to Wordbook",
+                       systemImage: model.savedEntryID == nil ? "bookmark" : "bookmark.fill") { model.saveToWordbook() }
+                    .disabled(model.isLoading || model.isSavingEntry || model.answer.isEmpty || model.lookupError != nil || model.savedEntryID != nil)
+                    .help("Save this AI lookup to your wordbook")
                 Button("Retry", systemImage: "arrow.clockwise") { model.retry() }
                     .disabled(model.isLoading)
                     .help("Retry")

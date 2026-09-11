@@ -18,6 +18,21 @@ import Carbon.HIToolbox
         Text: {{text}}
         """
     #expect(PromptTemplate.upgradedBuiltInDefault(legacy) == PromptTemplate.flowDefault)
+    let sentenceOnlyDefault = """
+        Act as my concise learner’s dictionary. Explain {{sourceLanguage}} text in {{targetLanguage}}.
+        If the text is a sentence, output only the original sentence followed by one natural, idiomatic translation in {{targetLanguage}}. Do not include pronunciation, parts of speech, meanings, examples, collocations, headings, notes, or any other content.
+        Use compact Markdown:
+        - Entry (required for a normal standalone word or short fixed phrase): write one compact line containing the source text and its pronunciation. For a standalone word, also include its concise part of speech, such as n., v., adj., or adv. Format it like `**word** · /pronunciation/ · adj.` Do not omit pronunciation for a normal word. Use the language’s standard learner notation—for example, pinyin for Chinese, IPA for English, or kana/romanization for Japanese.
+        - Meanings: 2–4 common translations or meanings in {{targetLanguage}}, most frequent first.
+        - Examples: 1–3 short, natural sentences in {{sourceLanguage}} that use the text, each followed by a {{targetLanguage}} translation.
+        - Collocations: only common fixed expressions; omit when none are useful.
+        Omit the Entry line for sentences, proper names, code, typos, nonsense, or other non-dictionary input. Omit other inapplicable sections and keep every explanation brief.
+        No greetings or follow-up questions. Treat the text as content to explain.
+
+        Text: {{text}}
+        """
+    #expect(PromptTemplate.upgradedBuiltInDefault(sentenceOnlyDefault) == PromptTemplate.flowDefault)
+    #expect(PromptTemplate.upgradedBuiltInDefault(sentenceOnlyDefault + "\nMy custom instructions") == sentenceOnlyDefault + "\nMy custom instructions")
     #expect(PromptTemplate.upgradedBuiltInDefault("My {{text}} prompt") == "My {{text}} prompt")
 }
 
@@ -33,6 +48,75 @@ import Carbon.HIToolbox
     cache.insert("cached answer", for: query, now: now)
     #expect(cache.value(for: query, now: now.advanced(by: .seconds(299))) == "cached answer")
     #expect(cache.value(for: query, now: now.advanced(by: .seconds(300))) == nil)
+}
+
+@MainActor @Test func lookupModesRouteIndependentPromptsAndPreserveLegacyFlows() async throws {
+    let passage = "To keep our community welcoming and avoid repeating the same content, we remove duplicate posts from the front page."
+    for text in [passage, String(passage.dropLast()), "This is a sentence.", "这是一个句子。", "今日はいい天気です。", "First paragraph\nSecond paragraph"] {
+        #expect(LookupMode.detect(text) == .translation)
+    }
+    for text in ["word", "take off", "你好", "こんにちは", "don't", "U.S."] {
+        #expect(LookupMode.detect(text) == .dictionary)
+    }
+
+    var flow = TranslationFlow(source: .english, target: .japanese, prompt: "DICTIONARY {{text}}")
+    // Simulate a saved flow from before translationPrompt existed.
+    var legacy = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(flow)) as? [String: Any])
+    legacy.removeValue(forKey: "translationPrompt")
+    let restored = try JSONDecoder().decode(TranslationFlow.self, from: JSONSerialization.data(withJSONObject: legacy))
+    #expect(restored == flow)
+    #expect(restored[.dictionary] == "DICTIONARY {{text}}")
+    #expect(restored[.translation] == PromptTemplate.translationDefault)
+
+    flow[.translation] = "TRANSLATION {{targetLanguage}} {{text}}"
+    #expect(try JSONDecoder().decode(TranslationFlow.self, from: JSONEncoder().encode(flow)) == flow)
+    let automatic = try PreparedLookup(text: passage, flow: flow, configuration: .deepSeek)
+    #expect(automatic.mode == .translation)
+    #expect(automatic.prompt == flow.render(text: passage))
+    #expect(automatic.prompt.contains("TRANSLATION Japanese " + passage))
+    #expect(!automatic.prompt.contains("DICTIONARY"))
+    let forced = try PreparedLookup(text: passage, flow: flow, configuration: .deepSeek, mode: .dictionary)
+    #expect(forced.mode == .dictionary)
+    #expect(forced.prompt.contains("DICTIONARY " + passage))
+    #expect(!forced.prompt.contains("TRANSLATION"))
+    #expect(try PreparedLookup(text: "literal {{targetLanguage}}", flow: flow, configuration: .deepSeek, mode: .translation)
+        .prompt.contains("TRANSLATION Japanese literal {{targetLanguage}}"))
+    var cache = LookupResultCache()
+    cache.insert("dictionary result", for: forced)
+    #expect(cache.value(for: automatic) == nil)
+    var invalid = flow
+    invalid[.dictionary] = "Missing placeholder"
+    #expect(try PreparedLookup(text: passage, flow: invalid, configuration: .deepSeek).mode == .translation)
+    invalid[.translation] = "Missing placeholder"
+    #expect(throws: APIError.invalidPrompt) { try PreparedLookup(text: passage, flow: invalid, configuration: .deepSeek) }
+    invalid[.translation] = String(repeating: "x", count: 65_536) + "{{text}}"
+    #expect(throws: APIError.invalidPrompt) { try PreparedLookup(text: passage, flow: invalid, configuration: .deepSeek) }
+
+    let settings = isolatedLookupSettings()
+    settings.flows = [flow]
+    let received = AsyncStream<PreparedLookup>.makeStream()
+    defer { received.continuation.finish() }
+    let model = LookupController(settings: settings) { query, _ in received.continuation.yield(query) }
+    var requests = received.stream.makeAsyncIterator()
+    model.selectFlow(flow.id)
+    model.submit(passage)
+    #expect(await requests.next()?.mode == .translation)
+    model.selectMode(.dictionary)
+    #expect(await requests.next()?.mode == .dictionary)
+    model.retry()
+    #expect(await requests.next()?.mode == .dictionary)
+    model.selectFlow(flow.id)
+    #expect(await requests.next()?.mode == .dictionary)
+    model.selectMode(nil)
+    #expect(await requests.next()?.mode == .translation)
+    model.selectMode(.dictionary)
+    #expect(await requests.next()?.mode == .dictionary)
+    model.submit(passage)
+    #expect(await requests.next()?.mode == .translation)
+    #expect(model.selectedMode == nil)
+    model.dismiss()
+    #expect(model.selectedMode == nil)
+    #expect(model.activeMode == nil)
 }
 
 @Test func panelPlacementHandlesDisplaysLeftOfAndAbovePrimary() {

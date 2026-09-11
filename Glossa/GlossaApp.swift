@@ -79,6 +79,10 @@ private struct GlossaMenu: View {
         if let error = model.shortcutError { Text(verbatim: error) }
         if let error = model.manualShortcutError { Text(verbatim: error) }
         Button("Type or Paste Text…") { model.showManualEntry() }
+        Button("Wordbook…") {
+            model.showWordbook()
+        }
+        .keyboardShortcut("b")
         Divider()
         Button("Settings…") {
             model.dismiss()

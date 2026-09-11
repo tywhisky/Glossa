@@ -5,8 +5,18 @@ import Observation
 @MainActor @Observable
 final class LookupController {
     let settings: LookupSettings
+    let wordbook = WordbookStore()
+    private(set) var savedEntryID: UUID?
+    private(set) var isSavingEntry = false
+    private(set) var wordbookError: String?
+    private(set) var lookupSourceLanguage = "auto"
+    private(set) var lookupTargetLanguage = ""
+    @ObservationIgnored private var sourceApplication: String?
+    @ObservationIgnored private let wordbookWindow = WordbookWindowController()
     private(set) var selectedFlowID: UUID?
     private(set) var activeFlowID: UUID?
+    private(set) var selectedMode: LookupMode?
+    private(set) var activeMode: LookupMode?
     private(set) var shortcut = LookupShortcut.load()
     private(set) var shortcutError: String?
     private(set) var manualShortcut = LookupShortcut.load(storageKey: LookupShortcut.manualStorageKey,
@@ -113,6 +123,7 @@ final class LookupController {
 
     func lookUpSelection() {
         selectedFlowID = nil
+        selectedMode = nil
         resetLookup()
         guard let source = NSWorkspace.shared.frontmostApplication,
               source.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
@@ -120,6 +131,7 @@ final class LookupController {
             return
         }
         let processID = source.processIdentifier
+        sourceApplication = source.localizedName
         text = ""
         failure = nil
         isReadingSelection = true
@@ -137,7 +149,9 @@ final class LookupController {
     }
 
     func showManualEntry() {
+        sourceApplication = nil
         selectedFlowID = nil
+        selectedMode = nil
         resetLookup()
         text = ""
         failure = nil
@@ -145,7 +159,10 @@ final class LookupController {
         show(windowFrame: nil, focusesInput: true)
     }
 
-    func submit(_ input: String) { submit(input, useCache: true) }
+    func submit(_ input: String) {
+        selectedMode = nil
+        submit(input, useCache: true)
+    }
 
     func retry() { submit(text, useCache: false) }
 
@@ -168,7 +185,11 @@ final class LookupController {
                 return
             }
             activeFlowID = flow.id
-            let query = try PreparedLookup(text: text, flow: flow, configuration: settings.configuration(for: flow.provider))
+            lookupSourceLanguage = (flow.source == .automatic ? FlowLanguage.detect(text) ?? .automatic : flow.source).rawValue
+            lookupTargetLanguage = flow.target.rawValue
+            Task { await wordbook.openIfExisting() }
+            activeMode = flow.resolvedMode(text: text, mode: selectedMode)
+            let query = try PreparedLookup(text: text, flow: flow, configuration: settings.configuration(for: flow.provider), mode: activeMode)
             if useCache, let cached = cache.value(for: query) {
                 answer = cached
                 return
@@ -207,7 +228,12 @@ final class LookupController {
 
     func selectFlow(_ id: UUID?) {
         selectedFlowID = id
-        if !text.isEmpty { submit(text) }
+        if !text.isEmpty { submit(text, useCache: true) }
+    }
+
+    func selectMode(_ mode: LookupMode?) {
+        selectedMode = mode
+        if !text.isEmpty { submit(text, useCache: true) }
     }
 
     func requestAccessibility() {
@@ -219,12 +245,37 @@ final class LookupController {
 
     func dismiss() {
         selectedFlowID = nil
+        selectedMode = nil
         resetLookup()
         panel?.dismiss()
         panel = nil
         text = ""
         failure = nil
         dismissalError = nil
+        sourceApplication = nil
+    }
+
+    func saveToWordbook() {
+        guard !isLoading, !isReadingSelection, !isSavingEntry, savedEntryID == nil,
+              lookupError == nil, !answer.isEmpty, !text.isEmpty, !lookupTargetLanguage.isEmpty else { return }
+        let entry = WordbookEntry(term: text, sourceLanguage: lookupSourceLanguage,
+            targetLanguage: lookupTargetLanguage, sourceApplication: sourceApplication, answerMarkdown: answer)
+        let id = generation
+        isSavingEntry = true
+        wordbookError = nil
+        Task {
+            let saved = await wordbook.save(entry)
+            guard generation == id else { return }
+            isSavingEntry = false
+            if saved { savedEntryID = entry.id }
+            else { wordbookError = wordbook.error ?? "The wordbook is busy. Try saving again." }
+        }
+    }
+
+    func showWordbook() {
+        dismiss()
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        wordbookWindow.show(store: wordbook, settings: settings)
     }
 
     func cancelLookup() {
@@ -243,7 +294,13 @@ final class LookupController {
 
     private func resetLookup() {
         cancelLookup()
+        savedEntryID = nil
+        isSavingEntry = false
+        wordbookError = nil
+        lookupSourceLanguage = "auto"
+        lookupTargetLanguage = ""
         activeFlowID = nil
+        activeMode = nil
         answer = ""
         lookupError = nil
     }

@@ -75,6 +75,36 @@ enum FlowLanguage: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 }
 
+enum LookupMode: String, CaseIterable, Identifiable, Sendable {
+    case dictionary, translation
+    var id: Self { self }
+    var name: String { self == .dictionary ? "Dictionary" : "Translation" }
+
+    static func detect(_ input: String, language: FlowLanguage = .automatic) -> Self {
+        let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        // ponytail: punctuation/length heuristics cannot resolve every short phrase; the panel offers a manual override.
+        if text.count >= 80 || text.contains(where: \.isNewline)
+            || text.rangeOfCharacter(from: CharacterSet(charactersIn: "。！？!?")) != nil {
+            return .translation
+        }
+        let words = NLTokenizer(unit: .word)
+        if language != .automatic { words.setLanguage(NLLanguage(rawValue: language.rawValue)) }
+        words.string = text
+        let range = text.startIndex..<text.endIndex
+        let count = words.tokens(for: range).count
+        if count >= 6 { return .translation }
+        if count > 1 {
+            let ending = text.trimmingCharacters(in: CharacterSet(charactersIn: "\"'”’»」』)]}"))
+            if ending.hasSuffix(".") { return .translation }
+            let sentences = NLTokenizer(unit: .sentence)
+            if language != .automatic { sentences.setLanguage(NLLanguage(rawValue: language.rawValue)) }
+            sentences.string = text
+            if sentences.tokens(for: range).count > 1 { return .translation }
+        }
+        return .dictionary
+    }
+}
+
 struct TranslationFlow: Codable, Equatable, Identifiable, Sendable {
     var id = UUID()
     var source: FlowLanguage = .automatic
@@ -82,10 +112,26 @@ struct TranslationFlow: Codable, Equatable, Identifiable, Sendable {
     var provider: AIProvider = .deepSeek
     var model = ""
     var prompt = PromptTemplate.flowDefault
+    // Missing in older saved flows; nil uses the built-in translation prompt.
+    var translationPrompt: String?
     var title: String { "\(source.name) → \(target.name)" }
 
-    func render(text: String) -> String {
-        let template = prompt
+    subscript(mode: LookupMode) -> String {
+        get { mode == .dictionary ? prompt : translationPrompt ?? PromptTemplate.translationDefault }
+        set {
+            switch mode {
+            case .dictionary: prompt = newValue
+            case .translation: translationPrompt = newValue
+            }
+        }
+    }
+
+    func resolvedMode(text: String, mode: LookupMode? = nil) -> LookupMode {
+        mode ?? LookupMode.detect(text, language: source)
+    }
+
+    func render(text: String, mode: LookupMode? = nil) -> String {
+        let template = self[resolvedMode(text: text, mode: mode)]
             .replacingOccurrences(of: "{{sourceLanguage}}", with: source == .automatic ? "the detected source language" : source.name)
             .replacingOccurrences(of: "{{targetLanguage}}", with: target.name)
         // Insert user text last so placeholder-like text in a selection stays literal.
@@ -105,14 +151,16 @@ struct PreparedLookup: Sendable {
     let text: String
     let configuration: APIConfiguration
     let prompt: String
+    let mode: LookupMode
 
-    init(text: String, flow: TranslationFlow, configuration: APIConfiguration) throws {
+    init(text: String, flow: TranslationFlow, configuration: APIConfiguration, mode: LookupMode? = nil) throws {
         self.text = try LookupInput.validated(text)
+        self.mode = flow.resolvedMode(text: self.text, mode: mode)
         var configuration = configuration
         if !flow.model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { configuration.model = flow.model }
         self.configuration = try configuration.validated()
-        guard flow.target != .automatic, flow.prompt.contains(PromptTemplate.placeholder) else { throw APIError.invalidPrompt }
-        prompt = flow.render(text: self.text)
+        guard flow.target != .automatic, flow[self.mode].contains(PromptTemplate.placeholder) else { throw APIError.invalidPrompt }
+        prompt = flow.render(text: self.text, mode: self.mode)
         guard prompt.utf8.count <= 65_536 else { throw APIError.invalidPrompt }
     }
 }

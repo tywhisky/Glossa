@@ -3,3 +3,11 @@
 // DEVELOPMENT_TEAM = YOUR_TEAM_ID
 // CODE_SIGN_IDENTITY = Apple Development
 // API keys belong in macOS Keychain, never in build settings or the app bundle.
+
+// Optional iCloud build: provision this app ID with iCloud/CloudKit and Push Notifications,
+// create its private container, and use a matching development/distribution profile.
+// GLOSSA_CODE_SIGN_ENTITLEMENTS = Glossa/Glossa-iCloud.entitlements
+// GLOSSA_ICLOUD_CONTAINER = iCloud.YOUR_REGISTERED_CONTAINER
+// GLOSSA_APS_ENVIRONMENT = development
+// GLOSSA_ICLOUD_ENVIRONMENT = Development
+// Use production / Production for distribution, matching the provisioning profile.

@@ -5,6 +5,8 @@ import SwiftUI
 struct PromptSettingsView: View {
     let model: LookupController
     @State private var pane = SettingsPane.lookup
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.layoutDirection) private var layoutDirection
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,21 +37,34 @@ struct PromptSettingsView: View {
 
             Divider()
 
-            ZStack(alignment: .top) {
-                LookupSettingsView(model: model)
-                    .settingsPane(isActive: pane == .lookup)
-                APISettingsView(settings: model.settings)
-                    .settingsPane(isActive: pane == .providers)
-                TranslationFlowsView(settings: model.settings)
-                    .settingsPane(isActive: pane == .flows)
+            GeometryReader { geometry in
+                ZStack(alignment: .topLeading) {
+                    ForEach(SettingsPane.allCases) { item in
+                        Group {
+                            switch item {
+                            case .lookup: LookupSettingsView(model: model)
+                            case .providers: APISettingsView(settings: model.settings)
+                            case .flows: TranslationFlowsView(settings: model.settings)
+                            }
+                        }
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .offset(x: CGFloat(item.rawValue - pane.rawValue) * geometry.size.width
+                                * (layoutDirection == .rightToLeft ? -1 : 1))
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: pane)
+                        .disabled(pane != item)
+                        .allowsHitTesting(pane == item)
+                        .accessibilityHidden(pane != item)
+                    }
+                }
             }
+            .clipped()
         }
         .frame(minWidth: 620, idealWidth: 620, minHeight: 520, idealHeight: 560)
         .disclosureGroupStyle(SettingsDisclosureGroupStyle())
     }
 }
 
-private enum SettingsPane: CaseIterable, Identifiable {
+private enum SettingsPane: Int, CaseIterable, Identifiable {
     case lookup, providers, flows
 
     var id: Self { self }
@@ -68,16 +83,6 @@ private enum SettingsPane: CaseIterable, Identifiable {
         case .providers: "sparkles"
         case .flows: "character.bubble"
         }
-    }
-}
-
-private extension View {
-    func settingsPane(isActive: Bool) -> some View {
-        opacity(isActive ? 1 : 0)
-            .frame(height: isActive ? nil : 0)
-            .clipped()
-            .allowsHitTesting(isActive)
-            .accessibilityHidden(!isActive)
     }
 }
 
@@ -209,6 +214,8 @@ private struct TranslationFlowEditor: View {
     @Binding var isExpanded: Bool
     let remove: () -> Void
     @State private var sampleText = "serendipity"
+    @State private var editingMode: LookupMode = .dictionary
+    @State private var previewMode: LookupMode?
     @State private var confirmsDelete = false
 
     var body: some View {
@@ -231,26 +238,40 @@ private struct TranslationFlowEditor: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
             VStack(alignment: .leading, spacing: 8) {
                 Text("Prompt").font(.headline)
-                TextEditor(text: $flow.prompt)
+                Picker("Prompt type", selection: $editingMode) {
+                    ForEach(LookupMode.allCases) { mode in
+                        Text(mode.name).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .accessibilityLabel("Prompt type")
+                TextEditor(text: $flow[editingMode])
                     .font(.body.monospaced())
                     .frame(height: 150)
                     .scrollContentBackground(.hidden)
                     .padding(8)
                     .background(Color(nsColor: .textBackgroundColor), in: .rect(cornerRadius: 6))
                     .overlay { RoundedRectangle(cornerRadius: 6).strokeBorder(.quaternary) }
-                    .accessibilityLabel("Prompt for \(flow.title)")
+                    .accessibilityLabel("\(editingMode.name) prompt for \(flow.title)")
                     .autocorrectionDisabled()
                 Text("Use {{text}}, {{sourceLanguage}}, and {{targetLanguage}}. The target language controls the response language; your prompt controls the content and Markdown layout.")
                     .font(.caption).foregroundStyle(.secondary)
-                if !flow.prompt.contains(PromptTemplate.placeholder) {
-                    Label("Include {{text}} before using this flow.", systemImage: "exclamationmark.circle")
+                if !flow[editingMode].contains(PromptTemplate.placeholder) {
+                    Label("Include {{text}} before using this mode.", systemImage: "exclamationmark.circle")
                         .font(.caption).foregroundStyle(.orange)
                 }
             }
             .padding(.vertical, 8)
             DisclosureGroup("Prompt Preview") {
                 TextField("Sample text", text: $sampleText)
-                Text(verbatim: flow.render(text: sampleText))
+                Picker("Mode", selection: $previewMode) {
+                    Text("Automatic · \(flow.resolvedMode(text: sampleText).name)").tag(nil as LookupMode?)
+                    ForEach(LookupMode.allCases) { mode in
+                        Text(mode.name).tag(Optional(mode))
+                    }
+                }
+                Text(verbatim: flow.render(text: sampleText, mode: previewMode))
                     .font(.caption.monospaced()).textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Text("Preview only. No AI request is sent.")
@@ -273,7 +294,7 @@ private struct TranslationFlowEditor: View {
                 Text(flow.title)
                 Text(settings.providerName(flow.provider))
                     .font(.caption).foregroundStyle(.secondary)
-                if !flow.prompt.contains(PromptTemplate.placeholder) {
+                if LookupMode.allCases.contains(where: { !flow[$0].contains(PromptTemplate.placeholder) }) {
                     Label("Prompt needs {{text}}", systemImage: "exclamationmark.circle")
                         .font(.caption).foregroundStyle(.orange)
                 }

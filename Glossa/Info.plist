@@ -22,6 +22,22 @@
     <string>$(MACOSX_DEPLOYMENT_TARGET)</string>
     <key>LSUIElement</key>
     <true/>
+    <key>UTExportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeIdentifier</key>
+            <string>com.glossa.wordbook</string>
+            <key>UTTypeDescription</key>
+            <string>Glossa Wordbook Backup</string>
+            <key>UTTypeConformsTo</key>
+            <array><string>public.json</string></array>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array><string>glossawords</string></array>
+            </dict>
+        </dict>
+    </array>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2026 Glossa contributors. MIT License.</string>
 </dict>
