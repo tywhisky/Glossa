@@ -11,9 +11,7 @@
   <strong>English</strong> · <a href="README.zh-CN.md">简体中文</a>
 </p>
 
-<p align="center">
-  <a href="https://github.com/user-attachments/assets/48702877-b64e-413e-9cc1-0aa725544f53">Watch the 23-second demo</a>
-</p>
+https://github.com/user-attachments/assets/48702877-b64e-413e-9cc1-0aa725544f53
 
 Glossa does three things: lookup, translation, and a wordbook. That's it. No lessons, feeds, piles of static dictionaries, or browser crammed into the app.
 

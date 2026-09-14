@@ -10,9 +10,7 @@
   <a href="README.md">English</a> · <strong>简体中文</strong>
 </p>
 
-<p align="center">
-  <a href="https://github.com/tywhisky/Glossa/releases/tag/demo-v1">观看 23 秒演示</a>
-</p>
+https://github.com/user-attachments/assets/48702877-b64e-413e-9cc1-0aa725544f53
 
 Glossa 只做三件事：查词、翻译和单词本。没有课程、信息流、一堆的静态词库，也拒绝往应用里塞一个浏览器。
 
