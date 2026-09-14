@@ -10,6 +10,10 @@
   <strong>English</strong> · <a href="README.zh-CN.md">简体中文</a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/tywhisky/Glossa/releases/tag/demo-v1">Watch the 23-second demo</a>
+</p>
+
 Glossa does three things: lookup, translation, and a wordbook. That's it. No lessons, feeds, piles of static dictionaries, or browser crammed into the app.
 
 Shape every result with your own prompt. Glossa gets back to the basics of language learning instead of pretending to be a linguist.

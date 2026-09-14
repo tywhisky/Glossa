@@ -10,6 +10,10 @@
   <a href="README.md">English</a> · <strong>简体中文</strong>
 </p>
 
+<p align="center">
+  <a href="https://github.com/tywhisky/Glossa/releases/tag/demo-v1">观看 23 秒演示</a>
+</p>
+
 Glossa 只做三件事：查词、翻译和单词本。没有课程、信息流、一堆的静态词库，也拒绝往应用里塞一个浏览器。
 
 彻底按照你的 Prompt 来定制查询内容，回归语言学习本质而不是假装成为语言学家。
