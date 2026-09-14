@@ -7,9 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10000000000000000000016 /* Wordbook.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* Wordbook.swift */; };
-		A10000000000000000000017 /* WordbookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* WordbookView.swift */; };
-		A10000000000000000000018 /* WordbookTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* WordbookTests.swift */; };
 		A10000000000000000000001 /* GlossaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* GlossaApp.swift */; };
 		A10000000000000000000002 /* PromptTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* PromptTemplate.swift */; };
 		A10000000000000000000003 /* PromptSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* PromptSettingsView.swift */; };
@@ -25,7 +22,10 @@
 		A10000000000000000000012 /* ClipboardSelectionReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* ClipboardSelectionReader.swift */; };
 		A10000000000000000000013 /* TranslationFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* TranslationFlow.swift */; };
 		A10000000000000000000014 /* GlossaIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* GlossaIcon.icon */; };
-		A10000000000000000000015 /* dict.svg in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* dict.svg */; };
+		A10000000000000000000015 /* GlossaIcon.icon/Assets/dict.svg in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* GlossaIcon.icon/Assets/dict.svg */; };
+		A10000000000000000000016 /* Wordbook.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* Wordbook.swift */; };
+		A10000000000000000000017 /* WordbookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* WordbookView.swift */; };
+		A10000000000000000000018 /* WordbookTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* WordbookTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,9 +39,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		A20000000000000000000016 /* Wordbook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Wordbook.swift; sourceTree = "<group>"; };
-		A20000000000000000000017 /* WordbookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordbookView.swift; sourceTree = "<group>"; };
-		A20000000000000000000018 /* WordbookTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordbookTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000001 /* GlossaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlossaApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* PromptTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptTemplate.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* PromptSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSettingsView.swift; sourceTree = "<group>"; };
@@ -61,8 +58,11 @@
 		A20000000000000000000011 /* ChatCompletionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatCompletionsTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000012 /* ClipboardSelectionReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSelectionReader.swift; sourceTree = "<group>"; };
 		A20000000000000000000013 /* TranslationFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationFlow.swift; sourceTree = "<group>"; };
-		A20000000000000000000014 /* GlossaIcon.icon */ = {isa = PBXFileReference; path = GlossaIcon.icon; sourceTree = "<group>"; };
-		A20000000000000000000015 /* dict.svg */ = {isa = PBXFileReference; path = GlossaIcon.icon/Assets/dict.svg; sourceTree = "<group>"; };
+		A20000000000000000000014 /* GlossaIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = GlossaIcon.icon; sourceTree = "<group>"; };
+		A20000000000000000000015 /* GlossaIcon.icon/Assets/dict.svg */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = GlossaIcon.icon/Assets/dict.svg; sourceTree = "<group>"; };
+		A20000000000000000000016 /* Wordbook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Wordbook.swift; sourceTree = "<group>"; };
+		A20000000000000000000017 /* WordbookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordbookView.swift; sourceTree = "<group>"; };
+		A20000000000000000000018 /* WordbookTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordbookTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,7 +87,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000014 /* GlossaIcon.icon */,
-				A20000000000000000000015 /* dict.svg */,
+				A20000000000000000000015 /* GlossaIcon.icon/Assets/dict.svg */,
 				A50000000000000000000002 /* Glossa */,
 				A50000000000000000000003 /* GlossaTests */,
 				A50000000000000000000004 /* Config */,
@@ -227,7 +227,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000014 /* GlossaIcon.icon in Resources */,
-				A10000000000000000000015 /* dict.svg in Resources */,
+				A10000000000000000000015 /* GlossaIcon.icon/Assets/dict.svg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -312,6 +312,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = GlossaIcon;
 				CODE_SIGN_ENTITLEMENTS = "$(GLOSSA_CODE_SIGN_ENTITLEMENTS)";
+				DEVELOPMENT_TEAM = 93TFMRU7X5;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -330,6 +331,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = GlossaIcon;
 				CODE_SIGN_ENTITLEMENTS = "$(GLOSSA_CODE_SIGN_ENTITLEMENTS)";
+				DEVELOPMENT_TEAM = 93TFMRU7X5;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
