@@ -1,3 +1,4 @@
+
 <p align="center">
   <img src="docs/assets/glossa-icon.png" width="128" height="128" alt="Glossa app icon">
 </p>
@@ -11,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/tywhisky/Glossa/releases/tag/demo-v1">Watch the 23-second demo</a>
+  <a href="https://github.com/user-attachments/assets/48702877-b64e-413e-9cc1-0aa725544f53">Watch the 23-second demo</a>
 </p>
 
 Glossa does three things: lookup, translation, and a wordbook. That's it. No lessons, feeds, piles of static dictionaries, or browser crammed into the app.
