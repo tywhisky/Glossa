@@ -87,6 +87,10 @@ enum LookupMode: String, CaseIterable, Identifiable, Sendable {
             || text.rangeOfCharacter(from: CharacterSet(charactersIn: "。！？!?")) != nil {
             return .translation
         }
+        // NLTokenizer can split dotted abbreviations into multiple words (for example, U.S.).
+        if text.range(of: #"^(?:[A-Za-z]\.){2,}$"#, options: .regularExpression) != nil {
+            return .dictionary
+        }
         let words = NLTokenizer(unit: .word)
         if language != .automatic { words.setLanguage(NLLanguage(rawValue: language.rawValue)) }
         words.string = text

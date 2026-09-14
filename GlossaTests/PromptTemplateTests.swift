@@ -52,12 +52,14 @@ import Carbon.HIToolbox
 
 @MainActor @Test func lookupModesRouteIndependentPromptsAndPreserveLegacyFlows() async throws {
     let passage = "To keep our community welcoming and avoid repeating the same content, we remove duplicate posts from the front page."
-    for text in [passage, String(passage.dropLast()), "This is a sentence.", "这是一个句子。", "今日はいい天気です。", "First paragraph\nSecond paragraph"] {
-        #expect(LookupMode.detect(text) == .translation)
+    for text in [passage, String(passage.dropLast()), "This is a sentence.", "Visit the U.S.", "A. B.", "这是一个句子。", "今日はいい天気です。", "First paragraph\nSecond paragraph"] {
+        #expect(LookupMode.detect(text) == .translation, "Expected translation mode for: \(text)")
     }
-    for text in ["word", "take off", "你好", "こんにちは", "don't", "U.S."] {
-        #expect(LookupMode.detect(text) == .dictionary)
+    for text in ["word", "take off", "你好", "こんにちは", "don't", "U.S.", "U.K.", "U.S.A.", "e.g.", "i.e.", " U.S. "] {
+        #expect(LookupMode.detect(text) == .dictionary, "Expected dictionary mode for: \(text)")
     }
+    #expect(LookupMode.detect("U.S.", language: .english) == .dictionary)
+    #expect(LookupMode.detect("Visit the U.S.", language: .english) == .translation)
 
     var flow = TranslationFlow(source: .english, target: .japanese, prompt: "DICTIONARY {{text}}")
     // Simulate a saved flow from before translationPrompt existed.
