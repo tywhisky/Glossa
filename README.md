@@ -11,11 +11,17 @@
   <strong>English</strong> · <a href="README.zh-CN.md">简体中文</a>
 </p>
 
-https://github.com/user-attachments/assets/48702877-b64e-413e-9cc1-0aa725544f53
-
 Glossa does three things: lookup, translation, and a wordbook. That's it. No lessons, feeds, piles of static dictionaries, or browser crammed into the app.
 
 Shape every result with your own prompt. Glossa gets back to the basics of language learning instead of pretending to be a linguist.
+
+<div align="center">
+
+https://github.com/user-attachments/assets/48702877-b64e-413e-9cc1-0aa725544f53
+
+<p><em>Select text. Press a shortcut. Keep reading.</em></p>
+
+</div>
 
 > [!NOTE]
 > Lookup, translation flows, and the local wordbook are implemented. Live provider coverage, cross-app interaction, and private iCloud sync still need validation.

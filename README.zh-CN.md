@@ -10,11 +10,17 @@
   <a href="README.md">English</a> · <strong>简体中文</strong>
 </p>
 
-https://github.com/user-attachments/assets/48702877-b64e-413e-9cc1-0aa725544f53
-
 Glossa 只做三件事：查词、翻译和单词本。没有课程、信息流、一堆的静态词库，也拒绝往应用里塞一个浏览器。
 
 彻底按照你的 Prompt 来定制查询内容，回归语言学习本质而不是假装成为语言学家。
+
+<div align="center">
+
+https://github.com/user-attachments/assets/48702877-b64e-413e-9cc1-0aa725544f53
+
+<p><em>选中文字，按下快捷键，继续阅读。</em></p>
+
+</div>
 
 > [!NOTE]
 > 查词、翻译流和本地单词本已经实现。各服务商的真实请求覆盖、跨 App 交互和私有 iCloud 同步仍需验证。
