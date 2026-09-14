@@ -60,7 +60,9 @@ struct WordbookView: View {
     @State private var document: WordbookDocument?
     @State private var fileError: String?
     @State private var fileNotice: String?
+    @Namespace private var collectionSelection
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         NavigationSplitView {
@@ -70,19 +72,16 @@ struct WordbookView: View {
                         .font(.headline)
                     TextField("Search words, context, and notes", text: $search)
                         .textFieldStyle(.roundedBorder)
-                    Picker("Collection", selection: $showTrash) {
-                        Text("Saved").tag(false)
-                        Text("Recently Deleted").tag(true)
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .accessibilityLabel("Collection")
+                    collectionPicker
                 }
                 .padding(16)
                 List(groups, selection: $selectedID) { group in
-                    WordbookRow(group: group).tag(group.id)
+                    WordbookRow(group: group)
+                        .tag(group.id)
+                        .listRowInsets(EdgeInsets(top: 2, leading: 12, bottom: 2, trailing: 12))
                 }
                 .listStyle(.sidebar)
+                .environment(\.defaultMinListRowHeight, 1)
                 .overlay {
                     if groups.isEmpty && !search.isEmpty {
                         ContentUnavailableView.search(text: search)
@@ -176,6 +175,39 @@ struct WordbookView: View {
         }
     }
 
+    private var collectionPicker: some View {
+        HStack(spacing: 3) {
+            collectionButton("Saved", trash: false)
+            collectionButton("Recently Deleted", trash: true)
+        }
+        .padding(3)
+        .background(.quaternary.opacity(0.45), in: .rect(cornerRadius: 8))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Collection")
+    }
+
+    private func collectionButton(_ title: LocalizedStringKey, trash: Bool) -> some View {
+        Button {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) { showTrash = trash }
+        } label: {
+            Text(title)
+                .font(.callout.weight(.medium))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
+                .background {
+                    if showTrash == trash {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.accentColor.opacity(0.14))
+                            .matchedGeometryEffect(id: "collection", in: collectionSelection)
+                    }
+                }
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(showTrash == trash ? .primary : .secondary)
+        .accessibilityAddTraits(showTrash == trash ? .isSelected : [])
+    }
+
     private func updateGroups() {
         groups = store.groups(search: search, trash: showTrash)
         if !groups.contains(where: { $0.id == selectedID }) { selectedID = groups.first?.id }
@@ -227,8 +259,13 @@ private enum WordbookSheet: Identifiable {
 
 private struct WordbookRow: View {
     let group: WordbookGroup
+    private var summary: String {
+        (group.latest.meaningMarkdown.isEmpty ? group.latest.context : group.latest.meaningMarkdown)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(verbatim: group.latest.term).font(.headline).lineLimit(1)
                 Spacer()
@@ -236,12 +273,13 @@ private struct WordbookRow: View {
                     Text("\(group.entries.count)").font(.caption).foregroundStyle(.secondary)
                 }
             }
-            Text(verbatim: group.latest.meaningMarkdown.isEmpty ? group.latest.context : group.latest.meaningMarkdown)
-                .lineLimit(2).font(.callout).foregroundStyle(.secondary)
+            if !summary.isEmpty {
+                Text(verbatim: summary).lineLimit(1).font(.callout).foregroundStyle(.secondary)
+            }
             Text(group.latest.createdAt, format: .dateTime.month(.abbreviated).day())
                 .font(.caption).foregroundStyle(.tertiary)
         }
-        .padding(.vertical, 7)
+        .padding(.vertical, 3)
         .accessibilityElement(children: .combine)
     }
 }
