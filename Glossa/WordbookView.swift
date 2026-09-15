@@ -532,6 +532,23 @@ private struct WordbookSyncView: View {
                     }))
                     .disabled(WordbookStore.signedCloudIdentifier == nil && !store.syncEnabled)
                     Text(verbatim: store.syncStatus).font(.callout).foregroundStyle(.secondary)
+                    if let issue = store.accountIssue {
+                        Text(verbatim: issue).font(.callout).foregroundStyle(.orange)
+                    }
+                    if let uploaded = store.lastUpload {
+                        LabeledContent("Last upload", value: uploaded.formatted(date: .abbreviated, time: .shortened))
+                    }
+                    if let downloaded = store.lastDownload {
+                        LabeledContent("Last download", value: downloaded.formatted(date: .abbreviated, time: .shortened))
+                    }
+                    if store.activeCloudIdentifier != nil {
+                        Button(store.isCheckingAccount ? "Checking iCloud…" : "Check iCloud Status") {
+                            Task { await store.checkCloudAccount(); await store.refresh() }
+                        }
+                        .disabled(store.isCheckingAccount || store.isBusy)
+                        Text("Uploads and downloads run automatically while Glossa is open. Activity times describe this Mac; other devices may still be catching up.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                     if store.needsRestart {
                         Text("Quit and reopen Glossa to apply this change. The current sync setting remains active until then; your local records stay on this Mac.")
                             .foregroundStyle(.orange)
@@ -550,7 +567,8 @@ private struct WordbookSyncView: View {
             .formStyle(.grouped)
             HStack { Spacer(); Button("Done") { dismiss() }.keyboardShortcut(.defaultAction) }
         }
-        .padding(24).frame(width: 520, height: 480)
+        .padding(24).frame(width: 520, height: 620)
+        .task { await store.checkCloudAccount() }
         .confirmationDialog("Enable iCloud sync?", isPresented: $confirmingEnable) {
             Button("Enable iCloud") { store.setSyncEnabled(true) }
         } message: {

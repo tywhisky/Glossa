@@ -1,8 +1,23 @@
 import Foundation
 import Testing
+import CloudKit
 @testable import Glossa
 
 struct WordbookTests {
+    @Test func cloudStatusExplainsRecoveryWithoutExposingCloudRecords() {
+        #expect(WordbookCloudStatus.accountIssue(.available) == nil)
+        #expect(WordbookCloudStatus.accountIssue(.noAccount)?.contains("Sign in") == true)
+        #expect(WordbookCloudStatus.accountIssue(.restricted) != nil)
+        #expect(WordbookCloudStatus.accountIssue(.temporarilyUnavailable) != nil)
+        let quota = NSError(domain: CKErrorDomain, code: CKError.Code.quotaExceeded.rawValue,
+                            userInfo: [NSLocalizedDescriptionKey: "private record contents"])
+        let wrapped = NSError(domain: NSCocoaErrorDomain, code: 134400, userInfo: [NSUnderlyingErrorKey: quota])
+        #expect(WordbookCloudStatus.failureMessage(wrapped).contains("storage is full"))
+        #expect(!WordbookCloudStatus.failureMessage(wrapped).contains("private record contents"))
+        let offline = NSError(domain: CKErrorDomain, code: CKError.Code.networkUnavailable.rawValue)
+        #expect(WordbookCloudStatus.failureMessage(offline).contains("connection returns"))
+    }
+
     @Test func backupRoundTripAndMergeKeepDeletionAndRejectConflicts() async throws {
         let time = Date(timeIntervalSinceReferenceDate: 800_000_000.123456)
         var original = WordbookEntry(term: "subtle", sourceLanguage: "en", targetLanguage: "zh-Hans",

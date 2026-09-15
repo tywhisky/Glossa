@@ -41,6 +41,7 @@ final class GlossaDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(windowWillClose(_:)),
                                                name: NSWindow.willCloseNotification, object: nil)
         lookup.start()
+        Task { await lookup.wordbook.startSyncIfEnabled() }
     }
 
     func applicationDidUpdate(_ notification: Notification) {

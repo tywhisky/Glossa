@@ -48,7 +48,9 @@ Shortcuts, language flows, prompts, providers, and models are editable in Settin
 
 The local wordbook is built with SwiftData. Each saved encounter can keep the original result, source app, your context, a short meaning, and a memory hook. Backup import/export is separate from sync, so you are not relying on iCloud as your only copy.
 
-Private CloudKit integration is present for properly provisioned builds, but real two-device synchronization, offline conflicts, and account changes still need validation. The ordinary local build stays local-only.
+In a provisioned build, open **Wordbook → Sync & Backups**, enable **Sync wordbook with iCloud**, then quit and reopen Glossa. The wordbook resumes private CloudKit sync at launch, including when its window is closed. The sync sheet shows account problems, upload/download activity, and recovery guidance for offline access or full iCloud storage. **Check iCloud Status** checks the account and reloads local records; CloudKit schedules transfers automatically.
+
+The ordinary local build stays local-only. See [iCloud build setup](docs/technical-notes.md#optional-icloud-build) to configure signing and the container. Real two-device synchronization, offline conflicts, and account changes still need validation; activity on this Mac does not confirm delivery to every device.
 
 ## Build and run
 
@@ -74,7 +76,7 @@ Implemented:
 - Streaming Markdown results with stop, retry, bounded responses, and a small in-memory cache
 - Per-language dictionary and translation flows with configurable providers, models, and prompts
 - Local SwiftData wordbook, editable AI notes, recoverable deletion, and backup import/export
-- Optional private CloudKit configuration for provisioned builds
+- Optional private CloudKit sync for provisioned builds, launch resumption, account checks, and transfer status
 
 Still needs validation:
 

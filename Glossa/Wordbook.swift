@@ -2,6 +2,7 @@ import Foundation
 import SwiftData
 import Observation
 import CoreData
+import CloudKit
 import Security
 import AppKit
 
@@ -136,7 +137,8 @@ struct WordbookBackup: Codable, Sendable {
     }
 }
 
-// SwiftData work stays off the main actor. Open only after a user lookup or wordbook action.
+// SwiftData work stays off the main actor. Local-only stores open on user actions;
+// opted-in cloud stores also open at launch so imports do not require a lookup.
 actor WordbookDatabase {
     private var container: ModelContainer?
     private let url: URL
@@ -213,6 +215,10 @@ final class WordbookStore {
     private(set) var notice: String?
     private(set) var syncEnabled: Bool
     private(set) var syncStatus = "On this Mac"
+    private(set) var accountIssue: String?
+    private(set) var isCheckingAccount = false
+    private(set) var lastUpload: Date?
+    private(set) var lastDownload: Date?
     private(set) var activeCloudIdentifier: String?
     private(set) var storageFailed = false
     private(set) var hasOpened = false
@@ -221,6 +227,11 @@ final class WordbookStore {
     @ObservationIgnored private let fileURL: URL
     @ObservationIgnored private var eventObserver: NSObjectProtocol?
     @ObservationIgnored private var remoteObserver: NSObjectProtocol?
+    @ObservationIgnored private var accountObserver: NSObjectProtocol?
+    @ObservationIgnored private var cloudContainer: CKContainer?
+    @ObservationIgnored private var accountCheckID = UUID()
+    @ObservationIgnored private var cloudFailures: [Int: String] = [:]
+    @ObservationIgnored private var cloudOperations: Set<UUID> = []
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
     @ObservationIgnored private var pendingRefresh = false
 
@@ -268,6 +279,28 @@ final class WordbookStore {
         await refresh()
     }
 
+    func startSyncIfEnabled() async {
+        guard syncEnabled else { return }
+        await refresh()
+        await checkCloudAccount()
+    }
+
+    func checkCloudAccount() async {
+        guard let cloudContainer else { return }
+        let checkID = UUID()
+        accountCheckID = checkID
+        isCheckingAccount = true
+        let issue: String?
+        do {
+            issue = WordbookCloudStatus.accountIssue(try await cloudContainer.accountStatus())
+        } catch {
+            issue = WordbookCloudStatus.failureMessage(error)
+        }
+        guard accountCheckID == checkID else { return }
+        accountIssue = issue
+        isCheckingAccount = false
+    }
+
     func refresh() async {
         guard !isBusy else { pendingRefresh = true; return }
         isBusy = true
@@ -280,6 +313,7 @@ final class WordbookStore {
                     syncStatus = "iCloud unavailable in this build · local data retained"
                 } else if activeCloudIdentifier != nil {
                     syncStatus = "iCloud enabled · waiting for sync"
+                    cloudContainer = CKContainer(identifier: activeCloudIdentifier!)
                     observeCloudEvents()
                     NSApplication.shared.registerForRemoteNotifications(matching: [])
                 }
@@ -368,20 +402,85 @@ final class WordbookStore {
         guard eventObserver == nil else { return }
         eventObserver = NotificationCenter.default.addObserver(forName: NSPersistentCloudKitContainer.eventChangedNotification,
             object: nil, queue: .main) { [weak self] notification in
-                let event = notification.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey] as? NSPersistentCloudKitContainer.Event
-                let ended = event?.endDate != nil
-                let succeeded = event?.succeeded == true
+                guard let event = notification.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey]
+                    as? NSPersistentCloudKitContainer.Event else { return }
+                let id = event.identifier
+                let type = event.type
+                let endDate = event.endDate
+                let succeeded = event.succeeded
+                let failure = event.error.map(WordbookCloudStatus.failureMessage)
                 Task { @MainActor [weak self] in
                     guard let self else { return }
-                    self.syncStatus = !ended ? "Syncing with iCloud…" : succeeded
-                        ? "iCloud activity completed" : "iCloud sync paused · local changes retained"
-                    if ended { self.scheduleRefresh() }
+                    if let endDate {
+                        self.cloudOperations.remove(id)
+                        if succeeded {
+                            self.cloudFailures[type.rawValue] = nil
+                            if type == .export { self.lastUpload = max(self.lastUpload ?? .distantPast, endDate) }
+                            if type == .import { self.lastDownload = max(self.lastDownload ?? .distantPast, endDate) }
+                        } else {
+                            self.cloudFailures[type.rawValue] = failure ?? "iCloud sync paused · local changes retained"
+                        }
+                        self.scheduleRefresh()
+                    } else {
+                        self.cloudOperations.insert(id)
+                    }
+                    self.syncStatus = self.cloudFailures.sorted { $0.key < $1.key }.first?.value
+                        ?? (self.cloudOperations.isEmpty ? "iCloud activity completed" : "Syncing with iCloud…")
                 }
             }
         remoteObserver = NotificationCenter.default.addObserver(forName: .NSPersistentStoreRemoteChange,
             object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor [weak self] in self?.scheduleRefresh() }
             }
+        accountObserver = NotificationCenter.default.addObserver(forName: .CKAccountChanged,
+            object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    // Dates from a previous account must not appear as this account's activity.
+                    self.lastUpload = nil
+                    self.lastDownload = nil
+                    self.cloudFailures.removeAll()
+                    self.cloudOperations.removeAll()
+                    self.syncStatus = "iCloud account changed · waiting for sync"
+                    await self.checkCloudAccount()
+                    self.scheduleRefresh()
+                }
+            }
+    }
+}
+
+enum WordbookCloudStatus {
+    static func accountIssue(_ status: CKAccountStatus) -> String? {
+        switch status {
+        case .available: nil
+        case .noAccount: "Sign in to iCloud in System Settings to sync your wordbook."
+        case .restricted: "iCloud access is restricted for this account. Check your account restrictions in System Settings."
+        case .temporarilyUnavailable: "iCloud is temporarily unavailable. Sync will resume when your account is available."
+        case .couldNotDetermine: "Could not check your iCloud account. Check your connection and try again."
+        @unknown default: "iCloud is unavailable. Check your account in System Settings."
+        }
+    }
+
+    static func failureMessage(_ error: any Error) -> String {
+        let error = error as NSError
+        if error.domain == CKErrorDomain, let code = CKError.Code(rawValue: error.code) {
+            switch code {
+            case .notAuthenticated: return accountIssue(.noAccount)!
+            case .quotaExceeded: return "Your iCloud storage is full. Free up space to resume wordbook sync."
+            case .networkUnavailable, .networkFailure:
+                return "iCloud is offline. Local changes will upload when the connection returns."
+            case .serviceUnavailable, .requestRateLimited, .zoneBusy:
+                return "iCloud is busy. Sync will retry automatically."
+            case .badContainer, .badDatabase, .missingEntitlement, .permissionFailure:
+                return "This build cannot access its iCloud container. Check the app's CloudKit provisioning."
+            default: break
+            }
+        }
+        if let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError {
+            return failureMessage(underlying)
+        }
+        // Never display raw CloudKit errors: they can contain record data and account identifiers.
+        return "iCloud sync paused. Your local changes are retained; check your account and connection."
     }
 }
 

@@ -47,7 +47,9 @@ https://github.com/user-attachments/assets/48702877-b64e-413e-9cc1-0aa725544f53
 
 本地单词本使用 SwiftData。每条收藏可以保留原始回答、来源 App、你补充的语境、简短释义和记忆提示。备份导入导出独立于同步，因此 iCloud 不会是你唯一的数据副本。
 
-项目已经包含供正确签名版本使用的私有 CloudKit 集成，但真实双设备同步、离线冲突和账户切换仍需验证。普通本地构建只使用本地存储。
+在配置好签名的版本中，打开 **单词本 → Sync & Backups**，启用 **Sync wordbook with iCloud** 后退出并重新打开 Glossa。应用会在启动时恢复私有 CloudKit 同步，关闭单词本窗口后也会继续。同步页面显示账户问题、上传/下载时间，以及断网、iCloud 空间不足等恢复提示。**Check iCloud Status** 会检查账户并重新读取本地记录，实际传输由 CloudKit 自动调度。
+
+普通本地构建仍只使用本地存储；签名和容器配置见 [iCloud 构建说明](docs/technical-notes.md#optional-icloud-build)。真实双设备同步、离线冲突和账户切换仍需验证；本机完成的同步活动不代表所有设备都已收到数据。
 
 ## 构建与运行
 
@@ -73,7 +75,7 @@ xcodebuild build -project Glossa.xcodeproj -scheme Glossa \
 - Markdown 流式结果、停止、重试、响应大小限制和小型内存缓存
 - 按语言配置的词典与翻译流程，可分别设置服务商、模型和 Prompt
 - 本地 SwiftData 单词本、可编辑 AI 笔记、可恢复删除和备份导入导出
-- 供已配置签名版本使用的可选私有 CloudKit 配置
+- 供已配置签名版本使用的可选私有 CloudKit 同步、启动恢复、账户检查和传输状态
 
 仍需验证：
 
