@@ -55,8 +55,8 @@ final class GlossaDelegate: NSObject, NSApplicationDelegate {
 
     private func updateDockVisibility() {
         let hasOpenWindow = NSApp.windows.contains {
-            // The status item also owns a visible window, but must not keep the Dock icon alive.
-            ($0.canBecomeMain || $0 is ResultPanel) && ($0.isVisible || $0.isMiniaturized)
+            // Only ordinary windows keep the Dock icon; the status item and lookup panel cannot become main.
+            $0.canBecomeMain && ($0.isVisible || $0.isMiniaturized)
         }
         let policy: NSApplication.ActivationPolicy = hasOpenWindow ? .regular : .accessory
         guard NSApp.activationPolicy() != policy else { return }

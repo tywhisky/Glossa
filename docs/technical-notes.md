@@ -6,7 +6,7 @@ This document holds implementation details and validation notes that would other
 
 ## Runtime and window behavior
 
-Glossa is a native SwiftUI menu bar app with no launch window. Its Dock icon appears while Settings, the lookup panel, or the wordbook is open and hides after the final window closes. The menu bar itself does not count as an open window.
+Glossa is a native SwiftUI menu bar app with no launch window. Its Dock icon appears while Settings or the wordbook is open, including when minimized, and hides after the final ordinary window closes. The menu bar and lookup panel do not keep the Dock icon visible.
 
 Selected-text lookup defaults to Option+A; manual input defaults to Option+Shift+A. Both shortcuts are configurable and report registration conflicts. The lookup panel is borderless and appears at the top-right of the screen containing the reading window, with the pointer's screen as a fallback. It supports streaming output, stop, retry, flow and mode overrides, Escape or outside-click dismissal, and replacement of a previous result.
 
