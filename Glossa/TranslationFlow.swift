@@ -46,6 +46,7 @@ enum FlowLanguage: String, Codable, CaseIterable, Identifiable, Sendable {
     case korean = "ko", french = "fr", german = "de", spanish = "es"
     case italian = "it", portuguese = "pt", russian = "ru", arabic = "ar"
     var id: Self { self }
+    var isChinese: Bool { self == .simplifiedChinese || self == .traditionalChinese }
     var name: String {
         switch self {
         case .automatic: "Auto-detect"
@@ -67,10 +68,19 @@ enum FlowLanguage: String, Codable, CaseIterable, Identifiable, Sendable {
     static func detect(_ text: String) -> Self? {
         let recognizer = NLLanguageRecognizer()
         recognizer.processString(text)
-        let candidates = recognizer.languageHypotheses(withMaximum: 2).sorted { $0.value > $1.value }
+        let hypotheses = recognizer.languageHypotheses(withMaximum: 3)
+        // Shared Chinese words can split confidence across scripts; compare the language as a whole.
+        let candidates = hypotheses.reduce(into: [NLLanguage: Double]()) { scores, candidate in
+            let language: NLLanguage = candidate.key == .traditionalChinese ? .simplifiedChinese : candidate.key
+            scores[language, default: 0] += candidate.value
+        }.sorted { $0.value > $1.value }
         // ponytail: short words can remain ambiguous; keep a manual flow picker instead of another AI request.
         guard let best = candidates.first, best.value >= 0.6,
               candidates.count == 1 || best.value - candidates[1].value >= 0.2 else { return nil }
+        if best.key == .simplifiedChinese {
+            return hypotheses[.traditionalChinese, default: 0] > hypotheses[.simplifiedChinese, default: 0]
+                ? .traditionalChinese : .simplifiedChinese
+        }
         return Self(rawValue: best.key.rawValue)
     }
 }
@@ -146,6 +156,10 @@ struct TranslationFlow: Codable, Equatable, Identifiable, Sendable {
     static func match(in flows: [Self], language: FlowLanguage?) -> Self? {
         let exact = flows.filter { $0.source != .automatic && $0.source == language }
         if !exact.isEmpty { return exact.count == 1 ? exact[0] : nil }
+        if language?.isChinese == true {
+            let chinese = flows.filter { $0.source.isChinese }
+            if !chinese.isEmpty { return chinese.count == 1 ? chinese[0] : nil }
+        }
         let fallback = flows.filter { $0.source == .automatic }
         return fallback.count == 1 ? fallback[0] : nil
     }

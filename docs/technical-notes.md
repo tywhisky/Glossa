@@ -30,7 +30,7 @@ Requests are HTTPS-only. Redirects are rejected so a prompt or credential cannot
 
 Each flow owns a source language, response language, provider, optional model override, and separate Dictionary and Translation prompts. Prompts support `{{text}}`, `{{sourceLanguage}}`, and `{{targetLanguage}}`. Language instructions are added before user text is substituted, keeping placeholder-like user input literal. Offline previews assemble the same prompt without contacting a provider.
 
-Source-language selection uses `NLLanguageRecognizer` on demand. A unique matching flow is chosen automatically; one unique Auto-detect flow handles unmatched or uncertain text. Ambiguous or missing matches require a manual choice before any request is sent.
+Source-language selection uses `NLLanguageRecognizer` on demand. Simplified and Traditional Chinese confidence is combined so shared short words do not become uncertain solely because their script is ambiguous. A unique flow for the detected script takes priority; if none exists, a single Chinese-source flow handles either Chinese script before the Auto-detect fallback. One unique Auto-detect flow handles other unmatched or uncertain text. Ambiguous or missing matches require a manual choice before any request is sent.
 
 Mode classification is local and heuristic. Text of at least 80 characters, a line break, or strong sentence punctuation uses Translation. Otherwise, native tokenization routes six or more words, multiple sentences, or multiword input ending in a period to Translation; shorter input uses Dictionary. A manual override applies only to the current query.
 

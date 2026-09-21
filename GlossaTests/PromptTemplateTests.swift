@@ -194,6 +194,34 @@ import Carbon.HIToolbox
     return LookupSettings(defaults: defaults)
 }
 
+@MainActor @Test func shortChineseInputUsesChineseFlowBeforeAutomaticFallback() throws {
+    let fallback = TranslationFlow()
+    let chinese = TranslationFlow(source: .simplifiedChinese, target: .english)
+    let traditional = TranslationFlow(source: .traditionalChinese, target: .english)
+    let settings = isolatedLookupSettings()
+    settings.flows = [fallback, chinese]
+    let model = LookupController(settings: settings, lookup: { _, _ in })
+    defer { model.dismiss() }
+
+    for text in ["明白", "中文", "理解", "你好", "谢谢", "謝謝"] {
+        let language = try #require(FlowLanguage.detect(text))
+        #expect(language.isChinese)
+        #expect(TranslationFlow.match(in: settings.flows, language: language)?.id == chinese.id)
+        model.submit(text)
+        #expect(model.activeFlowID == chinese.id)
+        #expect(model.lookupTargetLanguage == "en")
+    }
+    #expect(TranslationFlow.match(in: [fallback, chinese, traditional], language: .traditionalChinese)?.id == traditional.id)
+    #expect(TranslationFlow.match(in: [fallback, chinese, traditional], language: .simplifiedChinese)?.id == chinese.id)
+    #expect(TranslationFlow.match(in: [fallback, traditional], language: .simplifiedChinese)?.id == traditional.id)
+    #expect(TranslationFlow.match(in: [fallback, chinese, TranslationFlow(source: .simplifiedChinese)],
+                                  language: .traditionalChinese) == nil)
+    #expect(TranslationFlow.match(in: [fallback], language: .traditionalChinese)?.id == fallback.id)
+    #expect(TranslationFlow.match(in: settings.flows, language: .japanese)?.id == fallback.id)
+    #expect(FlowLanguage.detect("東京") == .japanese)
+    #expect(FlowLanguage.detect("") == nil)
+}
+
 @MainActor @Test func translationFlowsMigrateRoutePersistAndPrepareIndependentRequests() async throws {
     let suite = "GlossaTests.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suite))
