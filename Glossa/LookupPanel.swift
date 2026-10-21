@@ -324,18 +324,8 @@ private struct LookupPanelView: View {
     private var queryOptions: some View {
         VStack(spacing: 0) {
             Divider()
-            Menu {
-                Section("Mode") {
-                    Picker("Mode", selection: Binding(get: { model.selectedMode }, set: { model.selectMode($0) })) {
-                        Text("Automatic").tag(nil as LookupMode?)
-                        ForEach(LookupMode.allCases) { mode in
-                            Text(mode.name).tag(Optional(mode))
-                        }
-                    }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-                }
-                Section("Translation Flow") {
+            HStack(spacing: 12) {
+                Menu {
                     Picker("Flow", selection: Binding(get: { model.selectedFlowID }, set: { model.selectFlow($0) })) {
                         Text("Automatic").tag(nil as UUID?)
                         ForEach(model.settings.flows) { flow in
@@ -347,30 +337,52 @@ private struct LookupPanelView: View {
                     if model.settings.flows.isEmpty {
                         Button("Add a Translation Flow…", action: showSettings)
                     }
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(verbatim: flowSummary)
+                            .lineLimit(1).truncationMode(.middle)
+                        Image(systemName: "chevron.down")
+                            .imageScale(.small)
+                            .accessibilityHidden(true)
+                    }
+                    .padding(.vertical, 4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(.rect)
                 }
-            } label: {
-                HStack(spacing: 8) {
-                    Text(verbatim: flowSummary)
-                        .lineLimit(1).truncationMode(.middle)
-                    Spacer(minLength: 12)
-                    Text(verbatim: modeSummary).fixedSize()
-                    Image(systemName: "chevron.down")
-                        .imageScale(.small)
-                        .accessibilityHidden(true)
+                .help("\(flowSummary)\nChange translation flow")
+                .accessibilityLabel("Translation flow")
+                .accessibilityValue("\(flowSummary), \(model.selectedFlowID == nil ? "Automatic flow" : "Manual flow")")
+
+                Menu {
+                    Picker("Mode", selection: Binding(get: { model.selectedMode }, set: { model.selectMode($0) })) {
+                        Text("Automatic").tag(nil as LookupMode?)
+                        ForEach(LookupMode.allCases) { mode in
+                            Text(mode.name).tag(Optional(mode))
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(verbatim: modeSummary)
+                        Image(systemName: "chevron.down")
+                            .imageScale(.small)
+                            .accessibilityHidden(true)
+                    }
+                    .padding(.vertical, 4)
+                    .contentShape(.rect)
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.vertical, 4)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(.rect)
+                .fixedSize()
+                .help("\(modeSummary)\nChange query mode")
+                .accessibilityLabel("Query mode")
+                .accessibilityValue(modeSummary)
             }
-            // Preserve the full SwiftUI label instead of a native menu button's title.
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            // Preserve the full SwiftUI labels instead of native menu button titles.
             .menuStyle(.button)
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
-            .help("\(flowSummary)\n\(modeSummary)\nChange query mode or translation flow")
-            .accessibilityLabel("Query options")
-            .accessibilityValue("\(flowSummary), \(modeSummary), \(model.selectedFlowID == nil ? "Automatic flow" : "Manual flow")")
             .padding(.horizontal, 20)
             .padding(.vertical, 8)
         }

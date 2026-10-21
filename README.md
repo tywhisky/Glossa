@@ -44,7 +44,7 @@ https://github.com/user-attachments/assets/48702877-b64e-413e-9cc1-0aa725544f53
 
 Shortcuts, language flows, prompts, providers, and models are editable in Settings. Provider presets currently include DeepSeek, OpenAI, Gemini, Claude (experimental), Qwen, Kimi, Grok, and Mistral through OpenAI-compatible Chat Completions endpoints.
 
-The lookup panel keeps the original text and AI result in focus. Click the bottom status row to change the query mode or translation flow; it stays visible while long results scroll. The bookmark saves a result, and **…** contains Retry, New Lookup, and Settings.
+The lookup panel keeps the original text and AI result in focus. The bottom status row has separate menus: the left changes the translation flow, and the right changes the query mode. Both stay visible while long results scroll. The bookmark saves a result, and **…** contains Retry, New Lookup, and Settings.
 
 **Settings → Lookup → Clipboard → Force Copy** makes every selected-text lookup send ⌘C and leave the copied selection on your clipboard. It skips clipboard backup and restoration, including their size and format limits. The switch is off by default; with it off, Glossa tries direct Accessibility selection first and uses protected Copy fallback. Both modes require a readable selection and respect secure input. This setting does not affect manual input or paste.
 
