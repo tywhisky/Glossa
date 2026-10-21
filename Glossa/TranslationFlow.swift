@@ -186,6 +186,8 @@ struct PreparedLookup: Sendable {
 @MainActor @Observable
 final class LookupSettings {
     static let storageKey = "translationSettings.v1"
+    static let forceCopyStorageKey = "forceCopySelection"
+    var forceCopy: Bool { didSet { defaults.set(forceCopy, forKey: Self.forceCopyStorageKey) } }
     var flows: [TranslationFlow] = [] { didSet { persist() } }
     private(set) var configurations: [AIProvider: APIConfiguration] = [:]
     private(set) var error: String?
@@ -200,6 +202,7 @@ final class LookupSettings {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        forceCopy = defaults.bool(forKey: Self.forceCopyStorageKey)
         do {
             if let data = defaults.data(forKey: Self.storageKey) {
                 let saved = try JSONDecoder().decode(Saved.self, from: data)

@@ -5,10 +5,12 @@ import UniformTypeIdentifiers
 // On every supported OS this window is created on demand and its SwiftUI content released on close.
 @MainActor final class WordbookWindowController: NSObject, NSWindowDelegate {
     private var window: NSWindow?
+    private weak var speech: SpeechController?
 
-    func show(store: WordbookStore, settings: LookupSettings) {
+    func show(store: WordbookStore, settings: LookupSettings, speech: SpeechController) {
+        self.speech = speech
         if window == nil {
-            let controller = NSHostingController(rootView: WordbookView(store: store, settings: settings))
+            let controller = NSHostingController(rootView: WordbookView(store: store, settings: settings, speech: speech))
             let window = NSWindow(contentViewController: controller)
             window.title = "Wordbook"
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
@@ -23,6 +25,7 @@ import UniformTypeIdentifiers
     }
 
     func windowWillClose(_ notification: Notification) {
+        speech?.stop(owner: .wordbook)
         window?.contentViewController = nil
         window?.delegate = nil
         window = nil
@@ -49,6 +52,7 @@ struct WordbookDocument: FileDocument {
 struct WordbookView: View {
     let store: WordbookStore
     let settings: LookupSettings
+    let speech: SpeechController
     @State private var search = ""
     @State private var showTrash = false
     @State private var groups: [WordbookGroup] = []
@@ -127,7 +131,8 @@ struct WordbookView: View {
                     Divider()
                 }
                 if let group = groups.first(where: { $0.id == selectedID }) {
-                    WordbookDetail(group: group, store: store) { entry in sheet = .edit(entry) }
+                    WordbookDetail(group: group, store: store, speech: speech) { entry in sheet = .edit(entry) }
+                        .id(group.id)
                 } else if store.isBusy && !store.isLoaded {
                     ProgressView("Opening wordbook…").frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
@@ -149,6 +154,7 @@ struct WordbookView: View {
         .onChange(of: store.entries) { updateGroups() }
         .onChange(of: search) { updateGroups() }
         .onChange(of: showTrash) { selectedID = nil; updateGroups() }
+        .onChange(of: selectedID) { speech.stop(owner: .wordbook) }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await store.refresh() } }
         }
@@ -287,6 +293,7 @@ private struct WordbookRow: View {
 private struct WordbookDetail: View {
     let group: WordbookGroup
     let store: WordbookStore
+    let speech: SpeechController
     let edit: (WordbookEntry) -> Void
 
     var body: some View {
@@ -296,6 +303,8 @@ private struct WordbookDetail: View {
                     Text(verbatim: group.latest.term).font(.system(.largeTitle, design: .serif)).textSelection(.enabled)
                     Text("\(group.entries.count) saved encounters · \(languageName(group.latest.sourceLanguage))")
                         .font(.callout).foregroundStyle(.secondary)
+                    SpeechControls(speech: speech, text: group.latest.term,
+                                   sourceLanguage: group.latest.sourceLanguage, owner: .wordbook)
                 }
                 ForEach(group.entries) { entry in
                     WordbookEncounter(entry: entry, store: store, edit: edit)

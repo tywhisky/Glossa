@@ -26,6 +26,8 @@
 		A10000000000000000000016 /* Wordbook.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* Wordbook.swift */; };
 		A10000000000000000000017 /* WordbookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* WordbookView.swift */; };
 		A10000000000000000000018 /* WordbookTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* WordbookTests.swift */; };
+		A10000000000000000000019 /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* Speech.swift */; };
+		A1000000000000000000001A /* SpeechTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001A /* SpeechTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,6 +65,8 @@
 		A20000000000000000000016 /* Wordbook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Wordbook.swift; sourceTree = "<group>"; };
 		A20000000000000000000017 /* WordbookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordbookView.swift; sourceTree = "<group>"; };
 		A20000000000000000000018 /* WordbookTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordbookTests.swift; sourceTree = "<group>"; };
+		A20000000000000000000019 /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
+		A2000000000000000000001A /* SpeechTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,6 +116,7 @@
 				A2000000000000000000000D /* LookupPanel.swift */,
 				A20000000000000000000016 /* Wordbook.swift */,
 				A20000000000000000000017 /* WordbookView.swift */,
+				A20000000000000000000019 /* Speech.swift */,
 				A20000000000000000000005 /* Info.plist */,
 				A20000000000000000000006 /* Glossa.entitlements */,
 			);
@@ -124,6 +129,7 @@
 				A20000000000000000000004 /* PromptTemplateTests.swift */,
 				A20000000000000000000011 /* ChatCompletionsTests.swift */,
 				A20000000000000000000018 /* WordbookTests.swift */,
+				A2000000000000000000001A /* SpeechTests.swift */,
 			);
 			path = GlossaTests;
 			sourceTree = "<group>";
@@ -259,6 +265,7 @@
 				A10000000000000000000010 /* APISettingsView.swift in Sources */,
 				A10000000000000000000016 /* Wordbook.swift in Sources */,
 				A10000000000000000000017 /* WordbookView.swift in Sources */,
+				A10000000000000000000019 /* Speech.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -269,6 +276,7 @@
 				A10000000000000000000004 /* PromptTemplateTests.swift in Sources */,
 				A10000000000000000000011 /* ChatCompletionsTests.swift in Sources */,
 				A10000000000000000000018 /* WordbookTests.swift in Sources */,
+				A1000000000000000000001A /* SpeechTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

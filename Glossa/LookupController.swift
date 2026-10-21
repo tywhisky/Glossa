@@ -5,6 +5,7 @@ import Observation
 @MainActor @Observable
 final class LookupController {
     let settings: LookupSettings
+    let speech = SpeechController()
     let wordbook = WordbookStore()
     private(set) var savedEntryID: UUID?
     private(set) var isSavingEntry = false
@@ -58,6 +59,7 @@ final class LookupController {
 
     func stop() {
         dismiss()
+        speech.stop()
         hotKey.stop()
         manualHotKey.stop()
     }
@@ -136,8 +138,9 @@ final class LookupController {
         failure = nil
         isReadingSelection = true
         show(windowFrame: nil)
+        let forceCopy = settings.forceCopy
         task = Task { [weak self, reader] in
-            let selection = await reader.read(from: processID)
+            let selection = await reader.read(from: processID, forceCopy: forceCopy)
             guard !Task.isCancelled, let self,
                   NSWorkspace.shared.frontmostApplication?.processIdentifier == processID else { return }
             self.text = selection.text ?? ""
@@ -275,7 +278,7 @@ final class LookupController {
     func showWordbook() {
         dismiss()
         NSApplication.shared.activate(ignoringOtherApps: true)
-        wordbookWindow.show(store: wordbook, settings: settings)
+        wordbookWindow.show(store: wordbook, settings: settings, speech: speech)
     }
 
     func cancelLookup() {
@@ -293,6 +296,7 @@ final class LookupController {
     }
 
     private func resetLookup() {
+        speech.stop(owner: .lookup)
         cancelLookup()
         savedEntryID = nil
         isSavingEntry = false

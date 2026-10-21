@@ -14,7 +14,7 @@ Input is limited to 2,000 Swift characters without silently truncating oversized
 
 ## Selected-text access
 
-Selected-text access is always user-triggered. Glossa first checks the focused Accessibility element and up to six ancestors. If no readable selection is exposed, it sends Copy, accepts only a fresh pasteboard revision, and attempts to restore the complete previous pasteboard without overwriting a newer revision. Secure input and secure text fields stop capture. Dismissed or superseded reads cannot update the panel.
+Selected-text access is always user-triggered. By default, Glossa first checks the focused Accessibility element and up to six ancestors. If no readable selection is exposed, it sends Copy, accepts only a fresh pasteboard revision, and attempts to restore the complete previous pasteboard without overwriting a newer revision. **Settings → Lookup → Clipboard → Force Copy** instead sends Copy for every selected-text lookup and leaves the copied text on the clipboard. It never snapshots or restores the previous clipboard, so backup size and representation limits do not block capture. The preference is off by default, persists locally, and is captured at the start of each lookup. Both modes still require a fresh, briefly stable pasteboard revision after Copy; an unchanged clipboard is never treated as a new selection. Secure input and secure text fields stop capture in either mode. Dismissed or superseded reads cannot update the panel.
 
 Direct-distribution builds run outside App Sandbox because cross-app Accessibility APIs are incompatible with it. This does not grant Accessibility access or replace Developer ID signing and notarization. Glossa asks for permission only when the user chooses the permission action, never at launch.
 

@@ -115,7 +115,7 @@ final class LookupPanelController: NSObject, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) { model?.dismiss() }
 
     private func installDismissal() {
-        // The flow picker's menu has its own window and must receive Escape itself.
+        // Native menus have their own windows and must receive Escape themselves.
         menuObservers = [
             NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated {
@@ -162,135 +162,27 @@ private struct LookupPanelView: View {
     let model: LookupController
     let preferredHeightChanged: (CGFloat) -> Void
     @State private var input = ""
+    @State private var contentHeight: CGFloat = 0
+    @State private var footerHeight: CGFloat = 0
     @FocusState private var isInputFocused: Bool
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .firstTextBaseline) {
-                    if !model.text.isEmpty {
-                        Text(verbatim: model.text)
-                            .textSelection(.enabled)
-                    }
-                    Spacer(minLength: 0)
-                    panelActions
-                }
-                if let failure = model.failure {
-                    Label(failure.localizedDescription, systemImage: "exclamationmark.circle")
-                    if failure == .permission {
-                        Button("Allow Accessibility Access…") { model.requestAccessibility() }
-                        Text("After allowing access in System Settings, return to your reading app and press the shortcut again.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-                if model.isReadingSelection {
-                    HStack {
-                        ProgressView().controlSize(.small)
-                        Text("Reading selection…")
-                        Spacer()
-                        Button("Stop") { model.cancelLookup() }
-                    }
-                } else if !model.text.isEmpty {
-                    HStack(spacing: 12) {
-                        Picker("Mode", selection: Binding(get: { model.selectedMode }, set: { model.selectMode($0) })) {
-                            Text(model.selectedMode == nil ? (model.activeMode.map { "Auto · \($0.name)" } ?? "Auto") : "Auto")
-                                .tag(nil as LookupMode?)
-                            ForEach(LookupMode.allCases) { mode in
-                                Text(mode.name).tag(Optional(mode))
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .labelsHidden()
-                        .accessibilityLabel("Mode")
-                        .fixedSize()
-                        Menu {
-                            Picker("Flow", selection: Binding(get: { model.selectedFlowID }, set: { model.selectFlow($0) })) {
-                                Text("Automatic").tag(nil as UUID?)
-                                ForEach(model.settings.flows) { flow in
-                                    Text("\(flow.title) · \(flow.provider.name)").tag(Optional(flow.id))
-                                }
-                            }
-                            .labelsHidden()
-                        } label: {
-                            Text(model.selectedFlowID == nil ? "Flow: Auto" : "Flow: Manual")
-                        }
-                        .fixedSize()
-                        .accessibilityLabel("Flow")
-                        .accessibilityValue(model.selectedFlowID == nil ? "Automatic" : "Manual")
-                        Spacer(minLength: 0)
-                    }
-                    .controlSize(.small)
-                    if let flow = model.settings.flows.first(where: { $0.id == model.activeFlowID }) {
-                        Text("\(flow.title) · \(model.settings.providerName(flow.provider))")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    Divider()
-                    if let previous = model.wordbook.previous(term: model.text, sourceLanguage: model.lookupSourceLanguage),
-                       previous.id != model.savedEntryID {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Label("You saved this on \(previous.createdAt.formatted(date: .abbreviated, time: .omitted))", systemImage: "bookmark.fill")
-                                .font(.caption).foregroundStyle(.secondary)
-                            if !previous.meaningMarkdown.isEmpty {
-                                Text(verbatim: previous.meaningMarkdown).font(.callout)
-                            } else if !previous.context.isEmpty {
-                                Text(verbatim: previous.context).font(.callout).lineLimit(3)
-                            }
-                        }
-                    }
-                    if !model.answer.isEmpty {
-                        // ponytail: inline Markdown plus line breaks; add block layout when needed.
-                        Text((try? AttributedString(markdown: model.answer, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
-                             ?? AttributedString(model.answer))
-                            .textSelection(.enabled)
-                    }
-                    if model.isLoading {
-                        HStack {
-                            ProgressView().controlSize(.small)
-                            Text("Looking up…").foregroundStyle(.secondary)
-                            Spacer()
-                            Button("Stop") { model.cancelLookup() }
-                        }
-                    }
-                    if let error = model.lookupError {
-                        Text(verbatim: error).foregroundStyle(.secondary)
-                    }
-                    if let error = model.wordbookError {
-                        Text(verbatim: error).font(.caption).foregroundStyle(.orange)
-                    }
-                    if model.savedEntryID != nil {
-                        HStack {
-                            Label("Saved to Wordbook", systemImage: "checkmark")
-                                .font(.caption).foregroundStyle(.secondary)
-                            Spacer()
-                            Button("Open Wordbook") { model.showWordbook() }.controlSize(.small)
-                        }
-                    }
-                } else {
-                    Text("Look up text").font(.headline)
-                    TextField("Type or paste a word, phrase, or sentence", text: $input, axis: .vertical)
-                        .lineLimit(2...5)
-                        .textFieldStyle(.roundedBorder)
-                        .focused($isInputFocused)
-                        .onSubmit { model.submit(input) }
-                    HStack {
-                        Button("Look Up") { model.submit(input) }
-                            .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        PasteButton(payloadType: String.self) { values in
-                            if let first = values.first { input = first }
-                        }
-                        .labelStyle(.titleAndIcon)
-                    }
-                    Text("Up to 2,000 characters. Looking up sends this text and the matched flow’s prompt to its AI provider.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                if let error = model.dismissalError {
-                    Text(verbatim: error).font(.caption).foregroundStyle(.secondary)
-                }
+        VStack(spacing: 0) {
+            ScrollView {
+                panelContent
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(20)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(20)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { preferredHeightChanged($0) }
+            if !model.text.isEmpty {
+                queryOptions
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { footerHeight = $0 }
+                    .onDisappear { footerHeight = 0 }
+            }
+        }
+        .onChange(of: contentHeight + footerHeight) { _, height in
+            preferredHeightChanged(height)
         }
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
@@ -306,6 +198,184 @@ private struct LookupPanelView: View {
         .accessibilityLabel("Glossa lookup")
     }
 
+    private var panelContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            panelHeader
+            if !model.text.isEmpty {
+                Text(verbatim: model.text)
+                    .font(model.activeMode == .dictionary ? .system(.title2, design: .serif) : .body)
+                    .textSelection(.enabled)
+                if model.speech.owner == .lookup, let error = model.speech.error {
+                    Text(verbatim: error).font(.caption).foregroundStyle(.orange)
+                }
+            }
+            if let failure = model.failure {
+                Label(failure.localizedDescription, systemImage: "exclamationmark.circle")
+                if failure == .permission {
+                    Button("Allow Accessibility Access…") { model.requestAccessibility() }
+                    Text("After allowing access in System Settings, return to your reading app and press the shortcut again.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            if model.isReadingSelection {
+                HStack {
+                    ProgressView().controlSize(.small)
+                    Text("Reading selection…")
+                    Spacer()
+                    Button("Stop") { model.cancelLookup() }
+                }
+            } else if !model.text.isEmpty {
+                Divider()
+                if let previous = model.wordbook.previous(term: model.text, sourceLanguage: model.lookupSourceLanguage),
+                   previous.id != model.savedEntryID {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Label("You saved this on \(previous.createdAt.formatted(date: .abbreviated, time: .omitted))", systemImage: "bookmark.fill")
+                            .font(.caption).foregroundStyle(.secondary)
+                        if !previous.meaningMarkdown.isEmpty {
+                            Text(verbatim: previous.meaningMarkdown).font(.callout)
+                        } else if !previous.context.isEmpty {
+                            Text(verbatim: previous.context).font(.callout).lineLimit(3)
+                        }
+                    }
+                }
+                if !model.answer.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(model.activeMode == .translation ? "Translation" : "Definition")
+                            .font(.caption).foregroundStyle(.secondary)
+                        // ponytail: inline Markdown plus line breaks; add block layout when needed.
+                        Text((try? AttributedString(markdown: model.answer, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+                             ?? AttributedString(model.answer))
+                            .textSelection(.enabled)
+                    }
+                }
+                if model.isLoading {
+                    HStack {
+                        ProgressView().controlSize(.small)
+                        Text("Looking up…").foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Stop") { model.cancelLookup() }
+                    }
+                }
+                if let error = model.lookupError {
+                    Text(verbatim: error).foregroundStyle(.secondary)
+                }
+                if let error = model.wordbookError {
+                    Text(verbatim: error).font(.caption).foregroundStyle(.orange)
+                }
+                if model.savedEntryID != nil {
+                    HStack {
+                        Label("Saved to Wordbook", systemImage: "checkmark")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Open Wordbook") { model.showWordbook() }.controlSize(.small)
+                    }
+                }
+            } else {
+                TextField("Type or paste a word, phrase, or sentence", text: $input, axis: .vertical)
+                    .lineLimit(2...5)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($isInputFocused)
+                    .onSubmit { model.submit(input) }
+                HStack {
+                    Button("Look Up") { model.submit(input) }
+                        .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    PasteButton(payloadType: String.self) { values in
+                        if let first = values.first { input = first }
+                    }
+                    .labelStyle(.titleAndIcon)
+                }
+                Text("Up to 2,000 characters. Looking up sends this text and the matched flow’s prompt to its AI provider.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if let error = model.dismissalError {
+                Text(verbatim: error).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var panelHeader: some View {
+        HStack(spacing: 8) {
+            if model.text.isEmpty {
+                Text("Look up text").font(.headline)
+            } else {
+                Text("Original").font(.caption).foregroundStyle(.secondary)
+                SpeechControls(speech: model.speech, text: model.text,
+                               sourceLanguage: model.lookupSourceLanguage, owner: .lookup, compact: true)
+            }
+            Spacer(minLength: 0)
+            panelActions
+        }
+    }
+
+    private var flowSummary: String {
+        guard let flow = model.settings.flows.first(where: { $0.id == model.activeFlowID }) else {
+            return "Choose a Translation Flow"
+        }
+        let source = FlowLanguage(rawValue: model.lookupSourceLanguage)?.name ?? flow.source.name
+        return "\(source) → \(flow.target.name) · \(model.settings.providerName(flow.provider))"
+    }
+
+    private var modeSummary: String {
+        let mode = model.activeMode ?? model.selectedMode
+        let selection = model.selectedMode == nil ? "Auto" : "Manual"
+        return mode.map { "\($0.name) · \(selection)" } ?? "Automatic"
+    }
+
+    private var queryOptions: some View {
+        VStack(spacing: 0) {
+            Divider()
+            Menu {
+                Section("Mode") {
+                    Picker("Mode", selection: Binding(get: { model.selectedMode }, set: { model.selectMode($0) })) {
+                        Text("Automatic").tag(nil as LookupMode?)
+                        ForEach(LookupMode.allCases) { mode in
+                            Text(mode.name).tag(Optional(mode))
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                }
+                Section("Translation Flow") {
+                    Picker("Flow", selection: Binding(get: { model.selectedFlowID }, set: { model.selectFlow($0) })) {
+                        Text("Automatic").tag(nil as UUID?)
+                        ForEach(model.settings.flows) { flow in
+                            Text("\(flow.title) · \(model.settings.providerName(flow.provider))").tag(Optional(flow.id))
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                    if model.settings.flows.isEmpty {
+                        Button("Add a Translation Flow…", action: showSettings)
+                    }
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Text(verbatim: flowSummary)
+                        .lineLimit(1).truncationMode(.middle)
+                    Spacer(minLength: 12)
+                    Text(verbatim: modeSummary).fixedSize()
+                    Image(systemName: "chevron.down")
+                        .imageScale(.small)
+                        .accessibilityHidden(true)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.vertical, 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(.rect)
+            }
+            // Preserve the full SwiftUI label instead of a native menu button's title.
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .menuIndicator(.hidden)
+            .help("\(flowSummary)\n\(modeSummary)\nChange query mode or translation flow")
+            .accessibilityLabel("Query options")
+            .accessibilityValue("\(flowSummary), \(modeSummary), \(model.selectedFlowID == nil ? "Automatic flow" : "Manual flow")")
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
+        }
+    }
+
     private var panelActions: some View {
         HStack(spacing: 6) {
             if !model.text.isEmpty {
@@ -313,17 +383,25 @@ private struct LookupPanelView: View {
                        systemImage: model.savedEntryID == nil ? "bookmark" : "bookmark.fill") { model.saveToWordbook() }
                     .disabled(model.isLoading || model.isSavingEntry || model.answer.isEmpty || model.lookupError != nil || model.savedEntryID != nil)
                     .help("Save this AI lookup to your wordbook")
-                Button("Retry", systemImage: "arrow.clockwise") { model.retry() }
-                    .disabled(model.isLoading)
-                    .help("Retry")
-                Button("New Lookup", systemImage: "square.and.pencil") {
-                    input = ""
-                    model.showManualEntry()
-                }
-                .help("New Lookup")
             }
-            Button("Settings", systemImage: "gearshape", action: showSettings)
-                .help("Settings")
+            Menu {
+                if !model.text.isEmpty {
+                    Button("Retry", systemImage: "arrow.clockwise") { model.retry() }
+                        .disabled(model.isLoading)
+                    Button("New Lookup", systemImage: "square.and.pencil") {
+                        input = ""
+                        model.showManualEntry()
+                    }
+                    Divider()
+                }
+                Button("Settings…", systemImage: "gearshape", action: showSettings)
+            } label: {
+                Label("More Actions", systemImage: "ellipsis")
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("More actions")
         }
         .labelStyle(.iconOnly)
         .buttonStyle(.borderless)

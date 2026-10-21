@@ -187,6 +187,57 @@ import Carbon.HIToolbox
     #expect(LookupSettings(defaults: defaults).configurations == settings.configurations)
 }
 
+@MainActor @Test func forceCopyPreferencePersistsWithoutChangingSavedFlows() throws {
+    let suite = "GlossaTests.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let settings = LookupSettings(defaults: defaults)
+    #expect(!settings.forceCopy)
+    let savedFlows = defaults.data(forKey: LookupSettings.storageKey)
+    settings.forceCopy = true
+    #expect(LookupSettings(defaults: defaults).forceCopy)
+    #expect(defaults.data(forKey: LookupSettings.storageKey) == savedFlows)
+    settings.forceCopy = false
+    #expect(!LookupSettings(defaults: defaults).forceCopy)
+}
+
+@MainActor @Test(arguments: [true, false])
+func copyCaptureRestoresOrReplacesClipboard(preserveClipboard: Bool) async throws {
+    let pasteboard = NSPasteboard.withUniqueName()
+    defer { pasteboard.releaseGlobally() }
+    try #require(pasteboard.setString("previous clipboard", forType: .string))
+    let text = try await ClipboardSelectionReader().read(pasteboard: pasteboard,
+        preserveClipboard: preserveClipboard, isSourceActive: { true }) {
+        pasteboard.clearContents()
+        try #require(pasteboard.setString("selected text", forType: .string))
+    }
+    #expect(text == "selected text")
+    #expect(pasteboard.string(forType: .string) == (preserveClipboard ? "previous clipboard" : "selected text"))
+}
+
+@MainActor @Test func forceCopySkipsBackupLimitsButStillRequiresFreshText() async throws {
+    let pasteboard = NSPasteboard.withUniqueName()
+    defer { pasteboard.releaseGlobally() }
+    let reader = ClipboardSelectionReader()
+    try #require(pasteboard.setData(Data(repeating: 0, count: 1_048_577), forType: .png))
+    await #expect(throws: SelectionFailure.clipboardUnavailable) {
+        try await reader.read(pasteboard: pasteboard, isSourceActive: { true }) {
+            Issue.record("Protected capture must not send Copy when the clipboard cannot be preserved")
+        }
+    }
+    let text = try await reader.read(pasteboard: pasteboard, preserveClipboard: false, isSourceActive: { true }) {
+        pasteboard.clearContents()
+        try #require(pasteboard.setString("fresh selection", forType: .string))
+    }
+    #expect(text == "fresh selection")
+    #expect(pasteboard.string(forType: .string) == "fresh selection")
+    await #expect(throws: SelectionFailure.unavailable) {
+        try await reader.read(pasteboard: pasteboard, preserveClipboard: false, timeout: .milliseconds(50),
+                              isSourceActive: { true }, sendCopy: {})
+    }
+    #expect(pasteboard.string(forType: .string) == "fresh selection")
+}
+
 @MainActor func isolatedLookupSettings() -> LookupSettings {
     let suite = "GlossaTests.\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: suite)!

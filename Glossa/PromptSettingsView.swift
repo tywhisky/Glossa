@@ -133,6 +133,7 @@ private struct LookupSettingsView: View {
     @State private var hasAccess = AXIsProcessTrusted()
 
     var body: some View {
+        @Bindable var settings = model.settings
         Form {
             Section {
                 ShortcutRecorder(model: model, purpose: .selection)
@@ -142,6 +143,14 @@ private struct LookupSettingsView: View {
             } footer: {
                 Text("Selected Text looks up the current selection. Type or Paste opens the manual input panel. Click a shortcut to change it.")
             }
+            Section {
+                Toggle("Force Copy", isOn: $settings.forceCopy)
+            } header: {
+                Text("Clipboard")
+            } footer: {
+                Text("When enabled, every selected-text lookup sends ⌘C and leaves the copied selection on your clipboard. Previous clipboard contents are not backed up or restored. Turn off to use direct selection access with protected Copy fallback.")
+            }
+            SpeechSettingsSection(speech: model.speech)
             Section {
                 LabeledContent("Selected-text access") {
                     Label(hasAccess ? "Allowed" : "Not allowed",
@@ -161,7 +170,7 @@ private struct LookupSettingsView: View {
             } header: {
                 Text("Permissions")
             } footer: {
-                Text("Allow Glossa in System Settings → Privacy & Security → Accessibility. If direct selection access is unavailable, Glossa copies the selection and attempts to restore your clipboard. Access is only used when you look up text.")
+                Text("Allow Glossa in System Settings → Privacy & Security → Accessibility. Permission is required for both direct selection access and Force Copy. Access is only used when you look up text.")
             }
         }
         .formStyle(.grouped)

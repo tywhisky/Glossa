@@ -44,6 +44,12 @@ https://github.com/user-attachments/assets/48702877-b64e-413e-9cc1-0aa725544f53
 
 Shortcuts, language flows, prompts, providers, and models are editable in Settings. Provider presets currently include DeepSeek, OpenAI, Gemini, Claude (experimental), Qwen, Kimi, Grok, and Mistral through OpenAI-compatible Chat Completions endpoints.
 
+The lookup panel keeps the original text and AI result in focus. Click the bottom status row to change the query mode or translation flow; it stays visible while long results scroll. The bookmark saves a result, and **…** contains Retry, New Lookup, and Settings.
+
+**Settings → Lookup → Clipboard → Force Copy** makes every selected-text lookup send ⌘C and leave the copied selection on your clipboard. It skips clipboard backup and restoration, including their size and format limits. The switch is off by default; with it off, Glossa tries direct Accessibility selection first and uses protected Copy fallback. Both modes require a readable selection and respect secure input. This setting does not affect manual input or paste.
+
+Click the speaker beside **Original** in the lookup panel, or **Read Aloud** in a wordbook entry, to hear the original text using a macOS voice; click again to stop. The arrow beside the speaker opens the reading-language menu. Reading is independent of the AI response and never starts automatically. Automatic language selection uses the lookup's source language, then on-device detection; choose a reading language manually for ambiguous words. **Settings → Lookup → Read Aloud** lets you set the speed and a voice for each language, including English regional accents. Speech makes no AI request and stores no audio. macOS manages voice downloads separately from Glossa. Switching entries or closing the reading's window stops playback. Cloud TTS and reading generated definitions are not implemented.
+
 ## Wordbook and iCloud
 
 The local wordbook is built with SwiftData. Each saved encounter can keep the original result, source app, your context, a short meaning, and a memory hook. Backup import/export is separate from sync, so you are not relying on iCloud as your only copy.
@@ -74,6 +80,7 @@ Implemented:
 
 - Native menu bar app, global shortcuts, selected-text and manual lookup
 - Streaming Markdown results with stop, retry, bounded responses, and a small in-memory cache
+- On-demand original-text speech in lookups and the wordbook using macOS voices, with language, voice, and rate controls
 - Per-language dictionary and translation flows with configurable providers, models, and prompts
 - Local SwiftData wordbook, editable AI notes, recoverable deletion, and backup import/export
 - Optional private CloudKit sync for provisioned builds, launch resumption, account checks, and transfer status
@@ -84,6 +91,7 @@ Still needs validation:
 - Selection capture and Copy fallback across representative apps such as Chrome and Preview
 - Signed, two-device iCloud sync and conflict behavior
 - Keyboard, VoiceOver, interactive UI, and current Release memory measurements
+- Speech playback and pronunciation across languages, installed voices, rapid switching, and macOS 14
 
 Static dictionaries, OCR, screen capture, lessons, embedded result browsers, and local model runtimes are intentionally out of scope.
 

@@ -6,7 +6,7 @@ final class ClipboardSelectionReader {
     static let shared = ClipboardSelectionReader()
     private var isReading = false
 
-    func read(from processID: pid_t) async throws -> String {
+    func read(from processID: pid_t, preserveClipboard: Bool = true) async throws -> String {
         guard AXIsProcessTrusted(), CGPreflightPostEventAccess() else { throw SelectionFailure.permission }
         let active = {
             NSWorkspace.shared.frontmostApplication?.processIdentifier == processID
@@ -20,7 +20,7 @@ final class ClipboardSelectionReader {
             guard ContinuousClock().now < deadline else { throw SelectionFailure.heldModifiers }
             try await Task.sleep(for: .milliseconds(10))
         }
-        return try await read(pasteboard: .general, isSourceActive: active) {
+        return try await read(pasteboard: .general, preserveClipboard: preserveClipboard, isSourceActive: active) {
             guard let source = CGEventSource(stateID: .privateState),
                   let down = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_C), keyDown: true),
                   let up = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_C), keyDown: false) else {
@@ -34,7 +34,7 @@ final class ClipboardSelectionReader {
     }
 
     // The injected Copy action lets tests use private pasteboards without sending input to other apps.
-    func read(pasteboard: NSPasteboard, timeout: Duration = .milliseconds(700),
+    func read(pasteboard: NSPasteboard, preserveClipboard: Bool = true, timeout: Duration = .milliseconds(700),
               isSourceActive: () -> Bool, sendCopy: () throws -> Void) async throws -> String {
         let clock = ContinuousClock()
         let queueDeadline = clock.now + .seconds(1)
@@ -48,8 +48,9 @@ final class ClipboardSelectionReader {
         isReading = true
         defer { isReading = false }
 
-        let snapshot = try ClipboardSnapshot(pasteboard)
-        guard isSourceActive(), pasteboard.changeCount == snapshot.changeCount else { throw SelectionFailure.unavailable }
+        let snapshot = try (preserveClipboard ? ClipboardSnapshot(pasteboard) : nil)
+        let originalCount = snapshot?.changeCount ?? pasteboard.changeCount
+        guard isSourceActive(), pasteboard.changeCount == originalCount else { throw SelectionFailure.unavailable }
         try Task.checkCancellation()
         try sendCopy()
         let deadline = clock.now + timeout
@@ -58,7 +59,7 @@ final class ClipboardSelectionReader {
             try Task.checkCancellation()
             guard isSourceActive() else { throw SelectionFailure.unavailable }
             let copiedCount = pasteboard.changeCount
-            if copiedCount != snapshot.changeCount {
+            if copiedCount != originalCount {
                 // Copy may publish its representations in stages; require a briefly stable revision.
                 try await Task.sleep(for: .milliseconds(30))
                 guard pasteboard.changeCount == copiedCount else { throw SelectionFailure.clipboardChanged }
@@ -66,7 +67,7 @@ final class ClipboardSelectionReader {
                 let text = pasteboard.string(forType: .string)
                 guard pasteboard.changeCount == copiedCount else { throw SelectionFailure.clipboardChanged }
                 // No suspension between reading and restoration. Never restore over a later revision.
-                try snapshot.restore(pasteboard, ifUnchangedSince: copiedCount)
+                try snapshot?.restore(pasteboard, ifUnchangedSince: copiedCount)
                 try Task.checkCancellation()
                 guard let text else { throw SelectionFailure.unavailable }
                 return try LookupInput.validated(text)

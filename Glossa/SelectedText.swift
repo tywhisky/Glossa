@@ -40,7 +40,7 @@ struct TextSelection: Sendable {
 actor SelectedTextReader {
     private var deadline = ContinuousClock().now
 
-    func read(from processID: pid_t) async -> TextSelection {
+    func read(from processID: pid_t, forceCopy: Bool = false) async -> TextSelection {
         guard AXIsProcessTrusted() else { return .init(text: nil, windowFrame: nil, failure: .permission) }
         guard !IsSecureEventInputEnabled() else { return .init(text: nil, windowFrame: nil, failure: .secureInput) }
         guard !Task.isCancelled else { return .init(text: nil, windowFrame: nil, failure: .unavailable) }
@@ -57,7 +57,7 @@ actor SelectedTextReader {
             if attribute(kAXSubroleAttribute, of: current) as? String == kAXSecureTextFieldSubrole {
                 return .init(text: nil, windowFrame: frame, failure: .secureInput)
             }
-            if let text = attribute(kAXSelectedTextAttribute, of: current) as? String,
+            if !forceCopy, let text = attribute(kAXSelectedTextAttribute, of: current) as? String,
                !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 do {
                     return .init(text: try LookupInput.validated(text), windowFrame: frame, failure: nil)
@@ -69,7 +69,7 @@ actor SelectedTextReader {
         }
         do {
             try Task.checkCancellation()
-            let text = try await ClipboardSelectionReader.shared.read(from: processID)
+            let text = try await ClipboardSelectionReader.shared.read(from: processID, preserveClipboard: !forceCopy)
             return .init(text: text, windowFrame: frame, failure: nil)
         } catch {
             return .init(text: nil, windowFrame: frame, failure: (error as? SelectionFailure) ?? .unavailable)
