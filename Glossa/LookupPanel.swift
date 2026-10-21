@@ -164,6 +164,7 @@ private struct LookupPanelView: View {
     @State private var input = ""
     @State private var contentHeight: CGFloat = 0
     @State private var footerHeight: CGFloat = 0
+    @State private var didCopyAnswer = false
     @FocusState private var isInputFocused: Bool
     @Environment(\.openSettings) private var openSettings
 
@@ -194,6 +195,9 @@ private struct LookupPanelView: View {
         .onChange(of: model.manualFocusRequest) { _, _ in
             if !isInputFocused { isInputFocused = true }
         }
+        .onChange(of: model.answer) { _, _ in
+            didCopyAnswer = false
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Glossa lookup")
     }
@@ -222,7 +226,6 @@ private struct LookupPanelView: View {
                     ProgressView().controlSize(.small)
                     Text("Reading selection…")
                     Spacer()
-                    Button("Stop") { model.cancelLookup() }
                 }
             } else if !model.text.isEmpty {
                 Divider()
@@ -240,8 +243,21 @@ private struct LookupPanelView: View {
                 }
                 if !model.answer.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(model.activeMode == .translation ? "Translation" : "Definition")
-                            .font(.caption).foregroundStyle(.secondary)
+                        HStack {
+                            Text(model.activeMode == .translation ? "Translation" : "Definition")
+                                .font(.caption).foregroundStyle(.secondary)
+                            Spacer()
+                            Button(didCopyAnswer ? "Copied" : "Copy Result",
+                                   systemImage: didCopyAnswer ? "checkmark" : "doc.on.doc") {
+                                NSPasteboard.general.clearContents()
+                                didCopyAnswer = NSPasteboard.general.setString(model.answer, forType: .string)
+                                if !didCopyAnswer { NSSound.beep() }
+                            }
+                            .labelStyle(.iconOnly)
+                            .buttonStyle(.borderless)
+                            .controlSize(.regular)
+                            .help(didCopyAnswer ? "Copied" : "Copy result to clipboard")
+                        }
                         // ponytail: inline Markdown plus line breaks; add block layout when needed.
                         Text((try? AttributedString(markdown: model.answer, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
                              ?? AttributedString(model.answer))
@@ -253,7 +269,6 @@ private struct LookupPanelView: View {
                         ProgressView().controlSize(.small)
                         Text("Looking up…").foregroundStyle(.secondary)
                         Spacer()
-                        Button("Stop") { model.cancelLookup() }
                     }
                 }
                 if let error = model.lookupError {

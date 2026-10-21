@@ -46,6 +46,8 @@ Shortcuts, language flows, prompts, providers, and models are editable in Settin
 
 The lookup panel keeps the original text and AI result in focus. The bottom status row has separate menus: the left changes the translation flow, and the right changes the query mode. Both stay visible while long results scroll. The bookmark saves a result, and **…** contains Retry, New Lookup, and Settings.
 
+The copy button beside **Translation** or **Definition** copies the current result, preserving its Markdown source. A checkmark confirms copying; if the result is still streaming, only the text received so far is copied. Loading shows a progress indicator; press Escape or click outside the panel to close it and cancel the request.
+
 **Settings → Lookup → Clipboard → Force Copy** makes every selected-text lookup send ⌘C and leave the copied selection on your clipboard. It skips clipboard backup and restoration, including their size and format limits. The switch is off by default; with it off, Glossa tries direct Accessibility selection first and uses protected Copy fallback. Both modes require a readable selection and respect secure input. This setting does not affect manual input or paste.
 
 Click the speaker beside **Original** in the lookup panel, or **Read Aloud** in a wordbook entry, to hear the original text using a macOS voice; click again to stop. The arrow beside the speaker opens the reading-language menu. Reading is independent of the AI response and never starts automatically. Automatic language selection uses the lookup's source language, then on-device detection; choose a reading language manually for ambiguous words. **Settings → Lookup → Read Aloud** lets you set the speed and a voice for each language, including English regional accents. Speech makes no AI request and stores no audio. macOS manages voice downloads separately from Glossa. Switching entries or closing the reading's window stops playback. Cloud TTS and reading generated definitions are not implemented.
@@ -79,7 +81,7 @@ A real lookup needs a supported provider account and API key. Selected-text look
 Implemented:
 
 - Native menu bar app, global shortcuts, selected-text and manual lookup
-- Streaming Markdown results with stop, retry, bounded responses, and a small in-memory cache
+- Streaming Markdown results with retry, cancellation on dismissal, bounded responses, and a small in-memory cache
 - On-demand original-text speech in lookups and the wordbook using macOS voices, with language, voice, and rate controls
 - Per-language dictionary and translation flows with configurable providers, models, and prompts
 - Local SwiftData wordbook, editable AI notes, recoverable deletion, and backup import/export
